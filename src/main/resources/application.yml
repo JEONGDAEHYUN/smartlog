@@ -1,0 +1,43 @@
+spring:
+  # 기본 프로필: local (application-local.yml의 민감 정보를 자동 로드)
+  profiles:
+    active: local
+
+  # 애플리케이션 이름
+  application:
+    name: sync
+
+  # MariaDB 연결 설정
+  datasource:
+    url: jdbc:mariadb://192.168.10.129:3306/smartlog?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  # JPA/Hibernate 설정
+  jpa:
+    hibernate:
+      ddl-auto: update        # Entity 변경 시 테이블 자동 반영 (운영 환경에서는 validate 권장)
+    show-sql: true             # 콘솔에 SQL 출력
+    properties:
+      hibernate:
+        format_sql: true       # SQL 포맷팅 (가독성 향상)
+
+  # MongoDB 연결 설정
+  mongodb:
+    uri: ${MONGODB_URI}
+
+  # Thymeleaf 템플릿 엔진 설정
+  thymeleaf:
+    cache: false               # 캐시 비활성화 (개발 중 템플릿 즉시 반영)
+    encoding: UTF-8
+
+  # Spring Security 기본 인증 계정 (추후 DB 기반 인증으로 교체 예정)
+  security:
+    user:
+      name: ${SECURITY_USERNAME}
+      password: ${SECURITY_PASSWORD}
+
+# 서버 포트
+server:
+  port: 8080
