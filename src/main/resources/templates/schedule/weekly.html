@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주간/일간 계획표 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        /* Weekly/daily grid (page-specific) */
+        .week-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); border: 1px solid #d0d8e0; border-radius: 8px; overflow: hidden; }
+        .week-grid.day-view { grid-template-columns: 60px 1fr; }
+        .week-hd { background: #f0f4f8; padding: 8px 4px; text-align: center; font-size: 11px; font-weight: 600; color: #5a6a7a; border-bottom: 1px solid #d0d8e0; border-right: 1px solid #e8ecf0; }
+        .week-hd.today { background: #eef7ff; color: var(--n6); }
+        .week-time { padding: 6px 4px; font-size: 10px; color: #8a9bb0; text-align: center; border-bottom: 1px solid #e8ecf0; border-right: 1px solid #e8ecf0; background: #fafbfc; }
+        .week-cell { min-height: 50px; padding: 4px; border-bottom: 1px solid #e8ecf0; border-right: 1px solid #e8ecf0; background: #fff; }
+        .week-event { font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .week-event.HIGH { background: #fdf2f2; color: #c0392b; border-left: 2px solid #c0392b; }
+        .week-event.MID { background: #fffbeb; color: #b7770d; border-left: 2px solid #b7770d; }
+        .week-event.LOW { background: #f0fdf4; color: #1a7a4a; border-left: 2px solid #1a7a4a; }
+        .week-event.DONE { background: #f4f6f8; color: #8a9bb0; border-left: 2px solid #d0d8e0; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('schedule-weekly')}"></div>
+
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>스마트 일정</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">주간/일간 계획표</span>
+        </div>
+
+        <div class="p-4">
+            <!-- KPI -->
+            <div class="row g-3 mb-3">
+                <div class="col"><div class="card border position-relative overflow-hidden"><div class="kpi-line" style="background:var(--n6);"></div><div class="card-body py-2 ps-4"><div class="fs-4 fw-bold" th:text="${totalCount}">0</div><div class="text-muted small">이번 주 일정</div></div></div></div>
+                <div class="col"><div class="card border position-relative overflow-hidden"><div class="kpi-line" style="background:#c0392b;"></div><div class="card-body py-2 ps-4"><div class="fs-4 fw-bold" th:text="${highCount}">0</div><div class="text-muted small">HIGH</div></div></div></div>
+                <div class="col"><div class="card border position-relative overflow-hidden"><div class="kpi-line" style="background:#b7770d;"></div><div class="card-body py-2 ps-4"><div class="fs-4 fw-bold" th:text="${midCount}">0</div><div class="text-muted small">MID</div></div></div></div>
+                <div class="col"><div class="card border position-relative overflow-hidden"><div class="kpi-line" style="background:#1a7a4a;"></div><div class="card-body py-2 ps-4"><div class="fs-4 fw-bold" th:text="${lowCount}">0</div><div class="text-muted small">LOW</div></div></div></div>
+                <div class="col"><div class="card border position-relative overflow-hidden"><div class="kpi-line" style="background:#8a9bb0;"></div><div class="card-body py-2 ps-4"><div class="fs-4 fw-bold" th:text="${doneCount}">0</div><div class="text-muted small">DONE</div></div></div></div>
+            </div>
+
+            <!-- 주간 헤더 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="btnPrev" onclick="navigate(-1)">◀ 이전</button>
+                    <span class="fw-bold" id="weekTitle" style="font-size:13px;"></span>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnNext" onclick="navigate(1)">다음 ▶</button>
+                    <button class="btn btn-sm text-white" style="background:var(--n6);" onclick="goToday()">오늘</button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm" id="btnDay" onclick="setView('day')" style="font-size:11px;">일간 보기</button>
+                    <button class="btn btn-sm" id="btnWeek" onclick="setView('week')" style="font-size:11px;">주간 보기</button>
+                    <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">일정 등록</a>
+                </div>
+            </div>
+
+            <!-- 주간 그리드 -->
+            <div class="week-grid" id="weekGrid"></div>
+
+            <!-- 범례 -->
+            <div class="d-flex align-items-center gap-3 mt-3 p-2 bg-white border rounded small text-muted">
+                <strong class="text-dark">범례:</strong>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#fdf2f2;border-left:2px solid #c0392b;"></span>높음</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#fffbeb;border-left:2px solid #b7770d;"></span>보통</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#f0fdf4;border-left:2px solid #1a7a4a;"></span>낮음</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#f4f6f8;border-left:2px solid #d0d8e0;"></span>완료</span>
+            </div>
+
+            <!-- 주간 목록 테이블 -->
+            <div class="mt-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="sec-bar"></div>
+                    <span class="fw-bold small">이번 주 일정 상세 목록</span>
+                </div>
+                <div class="card border">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 small" id="weekTable">
+                            <thead class="table-light">
+                                <tr><th>#</th><th>일정 제목</th><th>시작 일시</th><th>종료 일시</th><th>우선순위</th><th>상태</th><th>관리</th></tr>
+                            </thead>
+                            <tbody id="weekTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let weekStart;
+let selectedDay;
+let currentView = 'week'; // 'week' or 'day'
+let events = [];
+const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+(function init() {
+    const now = new Date();
+    weekStart = getMonday(now);
+    selectedDay = new Date(now);
+    fetchEvents();
+})();
+
+function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+}
+
+function fetchEvents() {
+    fetch('/schedule/api/events')
+        .then(r => r.json())
+        .then(data => { events = data; render(); })
+        .catch(() => render());
+}
+
+function setView(view) {
+    currentView = view;
+    render();
+    updateViewButtons();
+}
+
+function updateViewButtons() {
+    const btnDay = document.getElementById('btnDay');
+    const btnWeek = document.getElementById('btnWeek');
+    if (currentView === 'day') {
+        btnDay.className = 'btn btn-sm text-white';
+        btnDay.style.background = 'var(--n6)';
+        btnWeek.className = 'btn btn-sm btn-outline-secondary';
+        btnWeek.style.background = '';
+    } else {
+        btnWeek.className = 'btn btn-sm text-white';
+        btnWeek.style.background = 'var(--n6)';
+        btnDay.className = 'btn btn-sm btn-outline-secondary';
+        btnDay.style.background = '';
+    }
+}
+
+function navigate(delta) {
+    if (currentView === 'week') {
+        weekStart.setDate(weekStart.getDate() + delta * 7);
+    } else {
+        selectedDay.setDate(selectedDay.getDate() + delta);
+        weekStart = getMonday(new Date(selectedDay));
+    }
+    render();
+}
+
+function goToday() {
+    const now = new Date();
+    weekStart = getMonday(now);
+    selectedDay = new Date(now);
+    render();
+}
+
+function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fmtShort(d) { return (d.getMonth() + 1) + '/' + d.getDate() + '(' + DAY_NAMES[d.getDay()] + ')'; }
+
+function render() {
+    updateViewButtons();
+    if (currentView === 'day') {
+        renderDay();
+    } else {
+        renderWeek();
+    }
+    renderWeekTable();
+}
+
+function renderWeek() {
+    const end = new Date(weekStart);
+    end.setDate(end.getDate() + 6);
+    document.getElementById('weekTitle').textContent =
+        weekStart.getFullYear() + '년 ' + fmtShort(weekStart) + ' ~ ' + fmtShort(end);
+
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = '';
+    grid.classList.remove('day-view');
+    const today = new Date();
+    const todayStr = fmt(today);
+
+    // 헤더 행
+    grid.innerHTML += '<div class="week-hd"></div>';
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        const isToday = fmt(d) === todayStr;
+        grid.innerHTML += '<div class="week-hd' + (isToday ? ' today' : '') + '" style="cursor:pointer;" onclick="selectDayView(' + i + ')">' + DAY_NAMES[d.getDay()] + '(' + d.getDate() + ')</div>';
+    }
+
+    // 시간별 행
+    HOURS.forEach(h => {
+        grid.innerHTML += '<div class="week-time">' + String(h).padStart(2, '0') + ':00</div>';
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(weekStart);
+            d.setDate(d.getDate() + i);
+            const dateStr = fmt(d);
+            const cellEvents = events.filter(e => {
+                if (!e.start) return false;
+                const eDate = e.start.substring(0, 10);
+                const eHour = parseInt(e.start.substring(11, 13));
+                return eDate === dateStr && eHour === h;
+            });
+            let cellHtml = '<div class="week-cell">';
+            cellEvents.forEach(ev => {
+                const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
+                cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</div>';
+            });
+            cellHtml += '</div>';
+            grid.innerHTML += cellHtml;
+        }
+    });
+}
+
+// 주간 그리드에서 요일 헤더 클릭 → 해당 날짜 일간 보기로 전환
+function selectDayView(dayIndex) {
+    selectedDay = new Date(weekStart);
+    selectedDay.setDate(selectedDay.getDate() + dayIndex);
+    setView('day');
+}
+
+function renderDay() {
+    const dateStr = fmt(selectedDay);
+    document.getElementById('weekTitle').textContent =
+        selectedDay.getFullYear() + '년 ' + (selectedDay.getMonth() + 1) + '월 ' + selectedDay.getDate() + '일 (' + DAY_NAMES[selectedDay.getDay()] + ') 일간 보기';
+
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = '';
+    grid.classList.add('day-view');
+
+    // 헤더
+    grid.innerHTML += '<div class="week-hd"></div>';
+    grid.innerHTML += '<div class="week-hd today">' + DAY_NAMES[selectedDay.getDay()] + '(' + selectedDay.getDate() + ')</div>';
+
+    // 시간별 행
+    HOURS.forEach(h => {
+        grid.innerHTML += '<div class="week-time">' + String(h).padStart(2, '0') + ':00</div>';
+
+        const cellEvents = events.filter(e => {
+            if (!e.start) return false;
+            const eDate = e.start.substring(0, 10);
+            const eHour = parseInt(e.start.substring(11, 13));
+            return eDate === dateStr && eHour === h;
+        });
+
+        let cellHtml = '<div class="week-cell">';
+        cellEvents.forEach(ev => {
+            const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
+            cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</div>';
+        });
+        cellHtml += '</div>';
+        grid.innerHTML += cellHtml;
+    });
+}
+
+function renderWeekTable() {
+    const tbody = document.getElementById('weekTableBody');
+    const titleEl = document.querySelector('#weekTable').closest('.mt-3').querySelector('.fw-bold');
+    let startStr, endStr;
+
+    if (currentView === 'day') {
+        startStr = fmt(selectedDay);
+        endStr = startStr;
+        titleEl.textContent = startStr + ' 일정 상세 목록';
+    } else {
+        const endDate = new Date(weekStart);
+        endDate.setDate(endDate.getDate() + 6);
+        startStr = fmt(weekStart);
+        endStr = fmt(endDate);
+        titleEl.textContent = '이번 주 일정 상세 목록';
+    }
+
+    const weekEvents = events.filter(e => {
+        if (!e.start) return false;
+        const d = e.start.substring(0, 10);
+        return d >= startStr && d <= endStr;
+    });
+
+    if (weekEvents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">이번 주 등록된 일정이 없습니다.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = weekEvents.map(ev => {
+        const prCls = ev.priority === 'HIGH' ? 'bg-danger-subtle text-danger' : (ev.priority === 'MID' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success');
+        const stCls = ev.status === 'DONE' ? 'bg-success-subtle text-success' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
+        const titleCls = ev.status === 'DONE' ? 'text-decoration-line-through text-muted' : 'fw-semibold';
+        return '<tr>' +
+            '<td><span class="badge bg-light text-muted" style="font-family:monospace;">#' + ev.id + '</span></td>' +
+            '<td class="' + titleCls + '" style="cursor:pointer;color:var(--n6);" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</td>' +
+            '<td class="text-muted">' + (ev.start ? ev.start.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
+            '<td class="text-muted">' + (ev.end ? ev.end.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
+            '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>' +
+            '<td><span class="badge ' + stCls + '">' + ev.status + '</span></td>' +
+            '<td><a href="/schedule/edit/' + ev.id + '" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a></td></tr>';
+    }).join('');
+}
+</script>
+</body>
+</html>

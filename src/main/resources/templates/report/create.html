@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보고서 생성 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 탑바 -->
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('report-create')}"></div>
+
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>지능형 리포트</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">보고서 생성</span>
+        </div>
+
+        <div class="p-4">
+            <div class="card border mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="sec-bar"></div>
+                        <span class="fw-bold small">보고서 설정</span>
+                        <span class="gemini-badge ms-2">Gemini AI 연동</span>
+                    </div>
+
+                    <form th:action="@{/report/create}" method="post">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-12">
+                                <label for="reportType" class="form-label small fw-semibold">
+                                    보고서 종류 <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="reportType" name="reportType" required>
+                                    <option value="weekly">주간 업무요약 보고서</option>
+                                    <option value="monthly" selected>월간 업무요약 보고서</option>
+                                    <option value="handover">인수인계 보고서</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info small py-2 mb-3">
+                            등록된 <strong>일정</strong>과 <strong>업무일지</strong> 데이터를 기반으로 Gemini AI가 자동으로 보고서를 생성합니다.
+                            데이터가 많을수록 더 정확한 보고서가 생성됩니다.
+                        </div>
+
+                        <!-- Gemini 처리 흐름 -->
+                        <div class="p-3 rounded mb-3" style="background:#f9f4ff; border:1px solid #ddd6fe;">
+                            <div class="fw-bold small mb-2" style="color:var(--gemini);">AI 보고서 생성 흐름</div>
+                            <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">1</span>
+                                일정 + 업무일지 데이터 수집
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">2</span>
+                                Gemini API에 보고서 생성 요청
+                            </div>
+                            <div class="d-flex align-items-center gap-2 small text-muted">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">3</span>
+                                요약, 통계, 권고사항 포함 보고서 생성
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-gemini text-white fw-bold w-100 py-2">
+                            AI 보고서 생성
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

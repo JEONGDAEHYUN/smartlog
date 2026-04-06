@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원본 메모 작성 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 탑바 -->
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('worklog-write')}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>AI 업무일지</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">원본 메모 작성</span>
+        </div>
+
+        <div class="p-4">
+            <div class="row g-4">
+                <!-- 좌측: 메모 입력 -->
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="sec-bar"></div>
+                        <span class="fw-bold small">비정형 데이터 입력</span>
+                        <span class="gemini-badge ms-2">Gemini API 연동</span>
+                    </div>
+
+                    <form th:action="@{/worklog/write}" method="post">
+                        <div class="mb-3">
+                            <label for="rawContent" class="form-label small fw-semibold">
+                                업무 내용 <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="rawContent" name="rawContent" rows="12"
+                                      placeholder="오늘의 업무 내용을 자유롭게 입력하세요&#10;&#10;예시:&#10;- 엔진 마운트 볼트 토크 점검했음&#10;- 볼트 4개 중 2번 볼트 토크값 규정치 미달 확인&#10;- 재조임 후 재측정 완료, 정상 확인"
+                                      required oninput="countChars(this)" maxlength="4000"></textarea>
+                            <div class="char-count" id="charCount">0 / 4,000자</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="aiRefine" value="false"
+                                    class="btn btn-outline-secondary flex-fill">임시저장</button>
+                            <button type="submit" name="aiRefine" value="true"
+                                    class="btn btn-gemini text-white flex-fill fw-bold">
+                                AI 가공 요청 (Gemini API)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 우측: 입력 가이드 -->
+                <div class="col-lg-5">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="sec-bar"></div>
+                        <span class="fw-bold small">입력 가이드</span>
+                    </div>
+
+                    <div class="alert alert-info small py-2 mb-3">
+                        <strong>어떻게 쓰면 AI가 잘 분석하나요?</strong><br>
+                        날짜/시간, 장비명, 작업 내용, 결과를 포함하면 더 정확한 일정으로 변환됩니다.
+                    </div>
+
+                    <div class="card border mb-3">
+                        <div class="card-body">
+                            <div class="small fw-bold text-success mb-2">좋은 예시</div>
+                            <div class="small text-muted p-2 rounded" style="background:#f8fafc; border-left:3px solid #1a7a4a; line-height:1.9;">
+                                F-15K 601호기 엔진 마운트 볼트<br>
+                                토크 점검 — 2번 볼트 규정치 미달<br>
+                                (45Nm → 38Nm), 재조임 후 정상<br>
+                                확인. P/N 123-456 교체 필요.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border">
+                        <div class="card-body">
+                            <div class="small fw-bold text-danger mb-2">개선 필요</div>
+                            <div class="small text-muted p-2 rounded" style="background:#f8fafc; border-left:3px solid #c0392b; line-height:1.9;">
+                                오늘 점검했는데 뭔가 이상한거<br>
+                                같아서 다시 봤음. 나중에 확인<br>
+                                해야할듯.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gemini 처리 흐름 -->
+                    <div class="card border mt-3" style="background:#f9f4ff; border-color:#ddd6fe !important;">
+                        <div class="card-body small">
+                            <div class="fw-bold mb-2" style="color:var(--gemini);">Gemini 처리 흐름</div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">1</span>
+                                <span class="text-muted">원본 메모 입력 (RAW)</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">2</span>
+                                <span class="text-muted">Gemini API 호출 (PROCESSING)</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge rounded-pill text-white" style="background:var(--gemini);">3</span>
+                                <span class="text-muted">정제 완료 (SUCCESS) / 실패 (FAILED)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 글자 수 카운트
+    function countChars(el) {
+        const cnt = el.value.length;
+        const display = document.getElementById('charCount');
+        display.textContent = cnt.toLocaleString() + ' / 4,000자';
+        display.className = 'char-count' + (cnt > 3800 ? (cnt > 4000 ? ' over' : ' warn') : '');
+    }
+</script>
+</body>
+</html>

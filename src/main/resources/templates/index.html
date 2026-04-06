@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart-Log Sync | AI 기반 업무일지 관리 시스템</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --n9: #0d1f35; --n8: #1a3a5c; --n7: #1e4a7a; --n6: #2d6ca8; --n4: #4a8fc4; --n2: #7ab0d4; }
+        body { margin: 0; background: var(--n9); font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; }
+
+        /* 헤더 */
+        .master-header { background: var(--n9); height: 52px; border-bottom: 2px solid var(--n6); }
+
+        /* 커버 */
+        .cover { min-height: calc(100vh - 52px); position: relative; overflow: hidden;
+                 display: flex; align-items: center; justify-content: center; }
+        .cover-grid { position: absolute; inset: 0;
+                      background-image: linear-gradient(rgba(45,108,168,.06) 1px, transparent 1px),
+                                        linear-gradient(90deg, rgba(45,108,168,.06) 1px, transparent 1px);
+                      background-size: 48px 48px; }
+        .cover-content { position: relative; text-align: center; max-width: 700px; padding: 40px; }
+        .cover-logo { width: 96px; height: 96px;
+                      background: linear-gradient(135deg, var(--n8), var(--n6));
+                      border-radius: 22px; border: 2px solid rgba(74,143,196,.4);
+                      display: flex; align-items: center; justify-content: center;
+                      margin: 0 auto 28px; box-shadow: 0 0 50px rgba(45,108,168,.25); }
+
+        /* 기능 카드 */
+        .feature-card { background: rgba(26,58,92,.6); border: 1px solid rgba(45,108,168,.3);
+                        border-radius: 8px; padding: 20px; text-align: left; }
+        .feature-icon { font-size: 28px; margin-bottom: 10px; }
+
+        .btn-enter { background: var(--n6); border: none; border-radius: 8px;
+                     padding: 14px 40px; font-size: 14px; font-weight: 700;
+                     letter-spacing: .04em; transition: background .15s; }
+        .btn-enter:hover { background: var(--n7); }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="master-header d-flex align-items-center justify-content-between px-4">
+    <div class="d-flex align-items-center gap-3">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <rect x="2" y="4" width="28" height="5" rx="2.5" fill="#4a8fc4"/>
+            <rect x="2" y="13" width="20" height="5" rx="2.5" fill="#2d6ca8"/>
+            <rect x="2" y="22" width="24" height="5" rx="2.5" fill="#1e4a7a"/>
+            <circle cx="26" cy="24.5" r="5" stroke="#4a8fc4" stroke-width="2" fill="none"/>
+            <path d="M23.5 24.5l2 2 3.5-3.5" stroke="#4a8fc4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+            <div style="font-size:15px; font-weight:700; color:#e8f4ff; letter-spacing:.04em;">Smart-Log Sync</div>
+            <div style="font-size:11px; color:var(--n4);">AI 기반 업무일지 관리 시스템</div>
+        </div>
+    </div>
+    <!-- 비로그인 상태: 로그인 버튼 -->
+    <div sec:authorize="!isAuthenticated()">
+        <a th:href="@{/login}" class="btn btn-sm text-white" style="background:var(--n6);">로그인</a>
+    </div>
+    <!-- 로그인 상태: 대시보드 이동 -->
+    <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-3">
+        <a th:href="@{/dashboard}" class="btn btn-sm text-white" style="background:var(--n6);">대시보드</a>
+    </div>
+</div>
+
+<!-- 커버 -->
+<div class="cover">
+    <div class="cover-grid"></div>
+    <div class="cover-content">
+        <!-- 로고 -->
+        <div class="cover-logo">
+            <svg width="52" height="52" viewBox="0 0 56 56" fill="none">
+                <rect x="4" y="8" width="48" height="8" rx="4" fill="#7ab0d4"/>
+                <rect x="4" y="22" width="34" height="8" rx="4" fill="#4a8fc4"/>
+                <rect x="4" y="36" width="40" height="8" rx="4" fill="#2d6ca8"/>
+                <circle cx="44" cy="43" r="9" stroke="#4a8fc4" stroke-width="2.5" fill="none"/>
+                <path d="M40 43l3 3 6-6" stroke="#4a8fc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+
+        <h1 style="font-size:30px; font-weight:700; color:#e8f4ff; letter-spacing:.06em; margin-bottom:8px;">Smart-Log Sync</h1>
+        <p style="font-size:14px; color:var(--n4); margin-bottom:36px;">AI 기반 업무일지 관리 시스템</p>
+
+        <!-- 주요 기능 소개 카드 -->
+        <div class="row g-3 mb-4 text-start">
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">📝</div>
+                    <div class="fw-bold text-white small mb-1">AI 업무일지</div>
+                    <div style="font-size:11px; color:var(--n2); line-height:1.7;">
+                        원본 메모를 입력하면<br>Gemini AI가 자동으로 정제
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">📅</div>
+                    <div class="fw-bold text-white small mb-1">스마트 일정</div>
+                    <div style="font-size:11px; color:var(--n2); line-height:1.7;">
+                        월간/주간 캘린더로<br>일정을 한눈에 관리
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">📋</div>
+                    <div class="fw-bold text-white small mb-1">지능형 리포트</div>
+                    <div style="font-size:11px; color:var(--n2); line-height:1.7;">
+                        업무 데이터 기반<br>AI 보고서 자동 생성
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시작 버튼 -->
+        <div sec:authorize="!isAuthenticated()">
+            <a th:href="@{/login}" class="btn btn-enter text-white">시작하기 →</a>
+        </div>
+        <div sec:authorize="isAuthenticated()">
+            <a th:href="@{/dashboard}" class="btn btn-enter text-white">대시보드로 이동 →</a>
+        </div>
+
+        <!-- 하단 정보 -->
+        <div class="mt-4" style="font-size:11px; color:var(--n4); line-height:2;">
+            시스템 운영시간: 24/7 · 지원 환경: Chrome 90+ / Edge 90+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

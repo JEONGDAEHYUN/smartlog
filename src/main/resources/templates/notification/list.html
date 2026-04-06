@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알림 센터 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('notifications')}"></div>
+
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>통합 관제</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">알림 센터</span>
+        </div>
+
+        <div class="p-4">
+            <!-- 필터 + 액션 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="sec-bar"></div>
+                    <span class="fw-bold small">알림 목록</span>
+                    <span class="badge bg-secondary-subtle text-secondary small ms-1"
+                          th:text="'전체 ' + ${totalCount} + '건'">0건</span>
+                    <span th:if="${unreadCount > 0}" class="badge bg-danger-subtle text-danger small"
+                          th:text="'미읽음 ' + ${unreadCount} + '건'">0건</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/notifications}" class="btn btn-sm"
+                       th:classappend="${filter == null} ? 'btn-primary' : 'btn-outline-secondary'"
+                       style="font-size:11px;">전체</a>
+                    <a th:href="@{/notifications(filter='unread')}" class="btn btn-sm"
+                       th:classappend="${filter == 'unread'} ? 'btn-primary' : 'btn-outline-secondary'"
+                       style="font-size:11px;">미읽음</a>
+                    <form th:action="@{/notifications/read-all}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="font-size:11px;">전체 읽음</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 알림 목록 -->
+            <div class="card border">
+                <div th:if="${#lists.isEmpty(notifications)}" class="text-center text-muted py-5 small">
+                    알림이 없습니다.
+                </div>
+                <div th:each="noti : ${notifications}"
+                     th:class="'noti-item' + (${noti.isRead == 'N'} ? ' unread' : '')">
+                    <div th:class="'noti-dot ' + (${noti.isRead == 'N'} ? 'unread' : 'read')"></div>
+                    <div class="flex-grow-1">
+                        <div class="small" th:text="${noti.notiMsg}">알림 메시지</div>
+                        <div class="text-muted mt-1" style="font-size:10px;"
+                             th:text="${#temporals.format(noti.notiDt, 'yyyy-MM-dd HH:mm')}">날짜</div>
+                    </div>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                        <form th:if="${noti.isRead == 'N'}"
+                              th:action="@{/notifications/read/{id}(id=${noti.notiId})}" method="post">
+                            <button type="submit" class="btn btn-sm py-0 px-2 text-white"
+                                    style="font-size:10px; background:var(--n6);">읽음</button>
+                        </form>
+                        <form th:action="@{/notifications/delete/{id}(id=${noti.notiId})}" method="post"
+                              onsubmit="return confirm('삭제하시겠습니까?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                    style="font-size:10px;">삭제</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

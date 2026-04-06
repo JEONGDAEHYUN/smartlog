@@ -38,6 +38,15 @@ spring:
       name: ${SECURITY_USERNAME}
       password: ${SECURITY_PASSWORD}
 
+# Gemini API 설정
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-2.0-flash
+
+# 날씨 API 설정 (OpenWeatherMap)
+weather:
+  api-key: ${WEATHER_API_KEY:}
+
 # 서버 포트
 server:
   port: 8080

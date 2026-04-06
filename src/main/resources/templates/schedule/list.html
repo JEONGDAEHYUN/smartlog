@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 일정 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 탑바 -->
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <!-- 사이드바 -->
+    <div th:replace="~{fragments/sidebar :: sidebar('schedule-list')}"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>스마트 일정</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">일정 목록</span>
+        </div>
+
+        <div class="p-4">
+
+            <!-- KPI 통계 -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-xl">
+                    <div class="card border position-relative overflow-hidden">
+                        <div class="kpi-line" style="background:var(--n6);"></div>
+                        <div class="card-body py-2 ps-4">
+                            <div class="fs-4 fw-bold" th:text="${totalCount}">0</div>
+                            <div class="text-muted small">전체 일정</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl">
+                    <div class="card border position-relative overflow-hidden">
+                        <div class="kpi-line" style="background:#c0392b;"></div>
+                        <div class="card-body py-2 ps-4">
+                            <div class="fs-4 fw-bold" th:text="${highCount}">0</div>
+                            <div class="text-muted small">HIGH 긴급</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl">
+                    <div class="card border position-relative overflow-hidden">
+                        <div class="kpi-line" style="background:#b7770d;"></div>
+                        <div class="card-body py-2 ps-4">
+                            <div class="fs-4 fw-bold" th:text="${midCount}">0</div>
+                            <div class="text-muted small">MID 보통</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl">
+                    <div class="card border position-relative overflow-hidden">
+                        <div class="kpi-line" style="background:#1a7a4a;"></div>
+                        <div class="card-body py-2 ps-4">
+                            <div class="fs-4 fw-bold" th:text="${lowCount}">0</div>
+                            <div class="text-muted small">LOW 낮음</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-xl">
+                    <div class="card border position-relative overflow-hidden">
+                        <div class="kpi-line" style="background:#8a9bb0;"></div>
+                        <div class="card-body py-2 ps-4">
+                            <div class="fs-4 fw-bold" th:text="${doneCount}">0</div>
+                            <div class="text-muted small">DONE 완료</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 일정 목록 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="sec-bar"></div>
+                    <span class="fw-bold small">일정 상세 목록</span>
+                </div>
+                <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">일정 등록</a>
+            </div>
+
+            <div class="card border">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>일정 제목</th>
+                                <th>시작 일시</th>
+                                <th>종료 일시</th>
+                                <th>우선순위</th>
+                                <th>상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(schedules)}">
+                                <td colspan="7" class="text-center text-muted py-4">등록된 일정이 없습니다.</td>
+                            </tr>
+                            <tr th:each="sch : ${schedules}">
+                                <td>
+                                    <span class="badge bg-light text-muted" style="font-family:monospace;"
+                                          th:text="'#' + ${sch.schId}">ID</span>
+                                </td>
+                                <td class="fw-semibold" th:classappend="${sch.status == 'DONE'} ? 'text-decoration-line-through text-muted'" th:text="${sch.schTitle}">제목</td>
+                                <td class="text-muted" th:text="${#temporals.format(sch.startDt, 'MM/dd HH:mm')}">날짜</td>
+                                <td class="text-muted" th:text="${sch.endDt != null ? #temporals.format(sch.endDt, 'MM/dd HH:mm') : '-'}">날짜</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${sch.priority == 'HIGH'} ? 'bg-danger-subtle text-danger' : (${sch.priority == 'MID'} ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success')"
+                                          th:text="${sch.priority}">MID</span>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${sch.status == 'DONE'} ? 'bg-success-subtle text-success' : (${sch.status == 'IN_PROGRESS'} ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info')"
+                                          th:text="${sch.status}">PLANNED</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a th:href="@{/schedule/edit/{id}(id=${sch.schId})}"
+                                           class="btn btn-sm py-0 px-2" style="font-size:11px; background:var(--n6); color:#fff;">수정</a>
+                                        <form th:action="@{/schedule/delete/{id}(id=${sch.schId})}" method="post"
+                                              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                    style="font-size:11px;">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 범례 -->
+            <div class="d-flex align-items-center gap-3 mt-3 p-2 bg-white border rounded small text-muted">
+                <strong class="text-dark">범례:</strong>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#fdf2f2;border-left:2px solid #c0392b;"></span>높음</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#fffbeb;border-left:2px solid #b7770d;"></span>보통</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#f0fdf4;border-left:2px solid #1a7a4a;"></span>낮음</span>
+                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#f4f6f8;border-left:2px solid #d0d8e0;"></span>완료</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

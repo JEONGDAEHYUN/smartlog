@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!-- 공통 사이드바 프래그먼트 — activeMenu 파라미터로 활성 메뉴 지정 -->
+<div th:fragment="sidebar(activeMenu)" class="sidebar d-none d-lg-block flex-shrink-0">
+    <div class="text-center py-3 border-bottom" style="border-color: #164070 !important;">
+        <div class="text-white fw-bold small" sec:authentication="name">사용자</div>
+        <div style="font-size:10px; color:var(--n4);">ROLE_USER</div>
+    </div>
+    <nav class="nav flex-column pt-2">
+        <div class="nav-label">통합 관제</div>
+        <a class="nav-link" th:classappend="${activeMenu == 'dashboard'} ? ' active'" th:href="@{/dashboard}">대시보드 메인</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'notifications'} ? ' active'" th:href="@{/notifications}">알림 센터</a>
+        <div class="nav-label">AI 업무일지</div>
+        <a class="nav-link" th:classappend="${activeMenu == 'worklog-write'} ? ' active'" th:href="@{/worklog/write}">원본 메모 작성</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'worklog-archive'} ? ' active'" th:href="@{/worklog/archive}">업무 아카이브</a>
+        <div class="nav-label">스마트 일정</div>
+        <a class="nav-link" th:classappend="${activeMenu == 'schedule-monthly'} ? ' active'" th:href="@{/schedule/monthly}">월간 캘린더</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'schedule-weekly'} ? ' active'" th:href="@{/schedule/weekly}">주간/일간 계획표</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'schedule-list'} ? ' active'" th:href="@{/schedule/list}">일정 목록</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'schedule-recurring'} ? ' active'" th:href="@{/schedule/recurring}">반복 업무 설정</a>
+        <div class="nav-label">지능형 리포트</div>
+        <a class="nav-link" th:classappend="${activeMenu == 'report-create'} ? ' active'" th:href="@{/report/create}">보고서 생성</a>
+        <a class="nav-link" th:classappend="${activeMenu == 'report-archive'} ? ' active'" th:href="@{/report/archive}">문서 보관함</a>
+        <div class="nav-label">설정</div>
+        <a class="nav-link" th:classappend="${activeMenu == 'mypage'} ? ' active'" th:href="@{/mypage}">마이페이지</a>
+    </nav>
+</div>
+</html>

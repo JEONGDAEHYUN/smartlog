@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비밀번호 찾기 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --n9: #0d1f35; --n6: #2d6ca8; }
+        body { background-color: #f4f6f8; min-height: 100vh; }
+        .step-bar { display: flex; border: 1px solid #d0d8e0; border-radius: 7px; overflow: hidden; }
+        .step-item { flex: 1; padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+                     border-right: 1px solid #d0d8e0; font-size: 13px; background: #fff; color: #8a9bb0; }
+        .step-item:last-child { border-right: none; }
+        .step-item.active { background: var(--n6); color: #fff; }
+        .step-item.done { background: #eef7ff; color: var(--n6); }
+        .step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+                    justify-content: center; font-size: 12px; font-weight: 700; background: #e0e8f0; color: #8a9bb0; }
+        .step-item.active .step-num { background: #fff; color: var(--n6); }
+        .step-item.done .step-num { background: var(--n6); color: #fff; }
+    </style>
+</head>
+<body>
+<div class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div style="width: 100%; max-width: 440px; padding: 24px;">
+
+        <h4 class="fw-bold mb-4">비밀번호 찾기 / 재설정</h4>
+
+        <!-- 스텝바 -->
+        <div class="step-bar mb-4">
+            <div class="step-item" th:classappend="${step == null || step == 1} ? ' active' : ' done'">
+                <div class="step-num">1</div><span>이메일 확인</span>
+            </div>
+            <div class="step-item" th:classappend="${step == 2} ? ' active' : (${step == 3} ? ' done' : '')">
+                <div class="step-num">2</div><span>인증코드 입력</span>
+            </div>
+            <div class="step-item" th:classappend="${step == 3} ? ' active' : ''">
+                <div class="step-num">3</div><span>비밀번호 재설정</span>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border">
+            <div class="card-body p-4">
+
+                <!-- 에러 메시지 -->
+                <div th:if="${error}" class="alert alert-danger small py-2" th:text="${error}"></div>
+
+                <!-- Step 1: 이메일 입력 -->
+                <div th:if="${step == null || step == 1}">
+                    <div class="alert alert-info small py-2 mb-3">
+                        가입 시 등록한 이메일로 인증 코드를 발송합니다
+                    </div>
+                    <form th:action="@{/find-pw/send}" method="post">
+                        <div class="mb-3">
+                            <label for="emailInput" class="form-label small fw-semibold">
+                                가입 이메일 <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" class="form-control" id="emailInput" name="userEmail"
+                                   placeholder="user@smartlog.kr" required>
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2"
+                                style="background-color: var(--n9);">인증 코드 발송</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: 인증코드 입력 -->
+                <div th:if="${step == 2}" class="text-center">
+                    <p class="text-muted small mb-3">
+                        이메일로 인증 코드를 발송했습니다 (유효시간 <strong>10분</strong>)
+                    </p>
+
+                    <!-- 개발용: 인증 코드 표시 -->
+                    <div th:if="${verifyCode}" class="alert alert-warning small py-2 mb-3">
+                        [개발용] 인증 코드: <strong th:text="${verifyCode}">123456</strong>
+                    </div>
+
+                    <form th:action="@{/find-pw/verify}" method="post">
+                        <input type="hidden" name="userEmail" th:value="${userEmail}">
+                        <div class="d-flex gap-2 justify-content-center mb-3">
+                            <input type="text" class="form-control text-center" name="inputCode"
+                                   placeholder="인증 코드 6자리" maxlength="6"
+                                   style="letter-spacing:4px; font-size:15px; max-width:200px;" required>
+                            <button type="submit" class="btn text-white" style="background:var(--n6);">확인</button>
+                        </div>
+                    </form>
+                    <a th:href="@{/find-pw}" class="small text-decoration-none" style="color:var(--n6);">코드 재발송</a>
+                </div>
+
+                <!-- Step 3: 비밀번호 재설정 -->
+                <div th:if="${step == 3}">
+                    <div class="alert alert-info small py-2 mb-3">
+                        <span th:text="${userEmail}">user@smartlog.kr</span> 계정의 새 비밀번호를 설정합니다
+                    </div>
+                    <form th:action="@{/find-pw/reset}" method="post">
+                        <input type="hidden" name="userEmail" th:value="${userEmail}">
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label small fw-semibold">
+                                새 비밀번호 <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword"
+                                   placeholder="8자 이상" required minlength="8">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label small fw-semibold">
+                                비밀번호 확인 <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                   placeholder="비밀번호 재입력" required>
+                        </div>
+                        <button type="submit" class="btn w-100 fw-bold text-white py-2"
+                                style="background-color: var(--n9);">비밀번호 변경 완료</button>
+                    </form>
+                </div>
+
+                <!-- 하단 링크 -->
+                <div class="d-flex justify-content-center gap-2 mt-4 small">
+                    <a th:href="@{/login}" class="text-decoration-none" style="color: var(--n6);">로그인으로</a>
+                    <span class="text-muted">|</span>
+                    <a th:href="@{/find-id}" class="text-decoration-none" style="color: var(--n6);">아이디 찾기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

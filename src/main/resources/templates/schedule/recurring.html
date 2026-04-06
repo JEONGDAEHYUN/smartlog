@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반복 업무 설정 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('schedule-recurring')}"></div>
+
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>스마트 일정</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">반복 업무 설정</span>
+        </div>
+
+        <div class="p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="sec-bar"></div>
+                    <span class="fw-bold small">등록된 반복 업무</span>
+                    <span class="badge bg-secondary-subtle text-secondary small ms-1"
+                          th:text="${#lists.size(recurringList)} + '건'">0건</span>
+                </div>
+                <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">반복 업무 등록</a>
+            </div>
+
+            <div class="card border">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>업무 제목</th>
+                                <th>반복 주기</th>
+                                <th>시작 시간</th>
+                                <th>종료 시간</th>
+                                <th>우선순위</th>
+                                <th>상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(recurringList)}">
+                                <td colspan="8" class="text-center text-muted py-4">등록된 반복 업무가 없습니다.</td>
+                            </tr>
+                            <tr th:each="sch : ${recurringList}">
+                                <td><span class="badge bg-light text-muted" style="font-family:monospace;"
+                                          th:text="'#' + ${sch.schId}">ID</span></td>
+                                <td class="fw-semibold" style="color:var(--n6); cursor:pointer;"
+                                    th:text="${sch.schTitle}"
+                                    th:onclick="'window.location.href=\'/schedule/edit/' + ${sch.schId} + '\''">제목</td>
+                                <td><span class="badge bg-info-subtle text-info" th:text="${sch.recurring}">매주</span></td>
+                                <td class="text-muted" th:text="${#temporals.format(sch.startDt, 'HH:mm')}">09:00</td>
+                                <td class="text-muted" th:text="${sch.endDt != null ? #temporals.format(sch.endDt, 'HH:mm') : '-'}">10:00</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${sch.priority == 'HIGH'} ? 'bg-danger-subtle text-danger' : (${sch.priority == 'MID'} ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success')"
+                                          th:text="${sch.priority}">MID</span>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${sch.status == 'DONE'} ? 'bg-success-subtle text-success' : (${sch.status == 'IN_PROGRESS'} ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info')"
+                                          th:text="${sch.status}">PLANNED</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a th:href="@{/schedule/edit/{id}(id=${sch.schId})}"
+                                           class="btn btn-sm py-0 px-2" style="font-size:10px; background:var(--n6); color:#fff;">수정</a>
+                                        <form th:action="@{/schedule/delete/{id}(id=${sch.schId})}" method="post"
+                                              onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                    style="font-size:10px;">삭제</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

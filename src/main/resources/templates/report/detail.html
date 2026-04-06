@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보고서 상세 - SmartLog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<nav th:replace="~{fragments/topbar :: topbar}"></nav>
+
+<div class="d-flex">
+    <div th:replace="~{fragments/sidebar :: sidebar('report-archive')}"></div>
+
+    <div class="flex-grow-1" style="min-height: calc(100vh - 42px); background: #f4f6f8;">
+        <div class="bg-white border-bottom px-4 py-2 small text-muted">
+            <span>홈</span> <span class="mx-1">▶</span>
+            <span>지능형 리포트</span> <span class="mx-1">▶</span>
+            <span class="fw-bold" style="color:var(--n6);">보고서 상세</span>
+        </div>
+
+        <div class="p-4">
+            <!-- 보고서 헤더 -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1" th:text="${report.repTitle}">보고서 제목</h5>
+                    <div class="text-muted small">
+                        <span th:text="${#temporals.format(report.regDt, 'yyyy-MM-dd HH:mm')}">생성일</span>
+                        <span class="ms-2 badge" style="background:#f3e8ff; color:#7c3aed;">Gemini AI 생성</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/report/archive}" class="btn btn-outline-secondary btn-sm">목록으로</a>
+                    <a th:href="@{/report/create}" class="btn btn-sm text-white" style="background:var(--n6);">새 보고서 생성</a>
+                </div>
+            </div>
+
+            <!-- 통계 차트 -->
+            <div class="row g-3 mb-3" th:if="${totalSch != null && totalSch > 0}">
+                <!-- 우선순위 통계 -->
+                <div class="col-md-6">
+                    <div class="card border">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <div class="sec-bar"></div>
+                                <span class="fw-bold small">우선순위 통계</span>
+                                <span class="text-muted small ms-auto" th:text="'총 ' + ${totalSch} + '건'">총 0건</span>
+                            </div>
+                            <!-- HIGH -->
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#c0392b;border-radius:2px;"></span><strong>HIGH</strong></span>
+                                    <span class="text-danger fw-bold" th:text="${highCount} + '건'">0건</span>
+                                </div>
+                                <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
+                                    <div style="height:100%; background:#c0392b; border-radius:5px;"
+                                         th:style="'width:' + (${totalSch > 0} ? ${highCount * 100 / totalSch} : 0) + '%'"></div>
+                                </div>
+                            </div>
+                            <!-- MID -->
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#b7770d;border-radius:2px;"></span><strong>MID</strong></span>
+                                    <span class="fw-bold" style="color:#b7770d;" th:text="${midCount} + '건'">0건</span>
+                                </div>
+                                <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
+                                    <div style="height:100%; background:#b7770d; border-radius:5px;"
+                                         th:style="'width:' + (${totalSch > 0} ? ${midCount * 100 / totalSch} : 0) + '%'"></div>
+                                </div>
+                            </div>
+                            <!-- LOW -->
+                            <div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#1a7a4a;border-radius:2px;"></span><strong>LOW</strong></span>
+                                    <span class="text-success fw-bold" th:text="${lowCount} + '건'">0건</span>
+                                </div>
+                                <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
+                                    <div style="height:100%; background:#1a7a4a; border-radius:5px;"
+                                         th:style="'width:' + (${totalSch > 0} ? ${lowCount * 100 / totalSch} : 0) + '%'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 일정 현황 -->
+                <div class="col-md-6">
+                    <div class="card border">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <div class="sec-bar"></div>
+                                <span class="fw-bold small">일정 현황</span>
+                                <span class="text-muted small ms-auto" th:text="'완료율 ' + ${doneRate} + '%'">완료율 0%</span>
+                            </div>
+                            <!-- 세그먼트 바 -->
+                            <div class="d-flex mb-3" style="height:18px; border-radius:6px; overflow:hidden;">
+                                <div style="background:#1a7a4a;"
+                                     th:style="'width:' + (${totalSch > 0} ? ${doneCount * 100 / totalSch} : 0) + '%'"></div>
+                                <div style="background:#b7770d;"
+                                     th:style="'width:' + (${totalSch > 0} ? ${inProgressCount * 100 / totalSch} : 0) + '%'"></div>
+                                <div style="background:var(--n6);"
+                                     th:style="'width:' + (${totalSch > 0} ? ${plannedCount * 100 / totalSch} : 0) + '%'"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#1a7a4a;border-radius:2px;"></span>DONE <strong th:text="${doneCount}">0</strong>건</span>
+                                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#b7770d;border-radius:2px;"></span>진행중 <strong th:text="${inProgressCount}">0</strong>건</span>
+                                <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:var(--n6);border-radius:2px;"></span>예정 <strong th:text="${plannedCount}">0</strong>건</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 보고서 본문 -->
+            <div class="card border">
+                <div class="card-body p-4">
+                    <div class="report-content" th:text="${report.repCont}">보고서 내용</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

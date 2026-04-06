@@ -1,0 +1,109 @@
+/* ======================================================
+   SmartLog Sync - Common Styles
+   Shared layout: topbar, sidebar, section bars, KPI, etc.
+   ====================================================== */
+
+/* CSS Variables */
+:root {
+    --n9: #0d1f35;
+    --n8: #1a3a5c;
+    --n7: #1e4a7a;
+    --n6: #2d6ca8;
+    --n4: #4a8fc4;
+    --n2: #7ab0d4;
+    --gemini: #7c3aed;
+}
+
+/* Base */
+body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 13px;
+}
+
+/* Sidebar */
+.sidebar { width: 220px; background: var(--n7); min-height: 100vh; }
+.sidebar .nav-link { color: var(--n2); font-size: 13px; padding: 9px 16px; border-left: 3px solid transparent; }
+.sidebar .nav-link:hover { background: rgba(45,108,168,.25); color: #fff; }
+.sidebar .nav-link.active { background: var(--n6); color: #fff; border-left-color: var(--n4); }
+.sidebar .nav-label { font-size: 10px; color: var(--n4); padding: 10px 16px 4px; letter-spacing: .05em; text-transform: uppercase; }
+
+/* Topbar */
+.topbar { background: var(--n9); height: 42px; }
+.tb-name { font-size: 14px; font-weight: 700; color: #e8f4ff; }
+.tb-sub { font-size: 11px; color: var(--n4); }
+.tb-avatar {
+    width: 28px; height: 28px; background: var(--n6); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+}
+
+/* Section bar (title left accent) */
+.sec-bar { width: 3px; height: 14px; background: var(--n6); border-radius: 2px; }
+
+/* KPI card left line */
+.kpi-line { position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 8px 0 0 8px; }
+
+/* Gemini badge */
+.gemini-badge {
+    display: inline-flex; align-items: center; gap: 4px; background: #f3e8ff;
+    color: #7c3aed; font-size: 10px; padding: 2px 8px; border-radius: 3px; font-weight: 600;
+}
+
+/* Gemini button */
+.btn-gemini { background: var(--gemini); border: none; }
+.btn-gemini:hover { background: #6d28d9; }
+
+/* Gemini small button (archive actions) */
+.btn-gemini-sm {
+    background: var(--gemini); color: #fff; border: none; border-radius: 3px;
+    font-size: 10px; padding: 0 8px; height: 28px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 3px;
+}
+
+/* UUID info box */
+.uuid-box {
+    background: #f0f4f8; border: 1px solid #d0d8e0; border-radius: 6px;
+    padding: 10px 14px; font-family: monospace; font-size: 11px; color: #5a6a7a;
+}
+
+/* Compare panel (worklog detail) */
+.compare-header { font-size: 12px; font-weight: 700; padding: 10px 14px; }
+.compare-body { padding: 14px; font-size: 13px; line-height: 1.9; white-space: pre-wrap; min-height: 150px; }
+
+/* Character count (worklog write) */
+.char-count { text-align: right; font-size: 11px; color: #8a9bb0; }
+.char-count.warn { color: #b7770d; }
+.char-count.over { color: #c0392b; }
+
+/* Truncated table cell */
+.td-truncate { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Report content */
+.report-content { white-space: pre-wrap; line-height: 1.9; font-size: 13px; color: #1a2a3a; }
+
+/* Notification items */
+.noti-item { padding: 12px 16px; border-bottom: 1px solid #e8ecf0; display: flex; align-items: flex-start; gap: 10px; }
+.noti-item:last-child { border-bottom: none; }
+.noti-item:hover { background: #f8fafc; }
+.noti-item.unread { background: #eef7ff; }
+.noti-item.unread:hover { background: #e4f0fb; }
+.noti-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.noti-dot.unread { background: var(--n6); }
+.noti-dot.read { background: #e8ecf0; }
+
+/* Dashboard: weather card */
+.weather-card { background: linear-gradient(135deg, #1a3a5c, #2d6ca8); border-radius: 8px; }
+
+/* Dashboard: quick action buttons */
+.quick-btn:hover { border-color: var(--n6) !important; background: #eef7ff !important; }
+
+/* Mypage: large avatar */
+.avatar-big {
+    width: 72px; height: 72px; background: linear-gradient(135deg, var(--n6), var(--n9));
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: #fff; border: 3px solid var(--n4);
+}
+
+/* Mypage: tab pills */
+.tab-pill .nav-link { padding: 6px 16px; font-size: 12px; color: #5a6a7a; border-radius: 5px; }
+.tab-pill .nav-link.active { background: #fff; color: var(--n6); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.1); }

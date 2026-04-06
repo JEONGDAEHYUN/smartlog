@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!-- 공통 탑바 프래그먼트 -->
+<nav th:fragment="topbar" class="topbar d-flex align-items-center justify-content-between px-3">
+    <div class="d-flex align-items-center gap-2">
+        <div style="width:24px;height:24px;background:var(--n6);border-radius:4px;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="2.5" rx="1.2" fill="#7ab0d4"/><rect x="1" y="7" width="10" height="2.5" rx="1.2" fill="#7ab0d4"/><rect x="1" y="12" width="12" height="2.5" rx="1.2" fill="#7ab0d4"/></svg>
+        </div>
+        <span class="tb-name">Smart-Log Sync</span>
+        <span class="tb-sub d-none d-md-inline">AI 기반 업무일지 관리 시스템</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 text-white small">
+            <div class="tb-avatar">U</div>
+            <span sec:authentication="name">사용자</span>
+        </div>
+        <form th:action="@{/logout}" method="post" class="mb-0">
+            <button type="submit" class="btn btn-sm text-white-50" style="font-size:11px;">로그아웃</button>
+        </form>
+    </div>
+</nav>
+</html>
