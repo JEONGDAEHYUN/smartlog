@@ -77,9 +77,6 @@
                     <div th:if="${param.error}" class="alert alert-danger small py-2">
                         이메일 또는 비밀번호가 일치하지 않습니다.
                         <span th:if="${param.attempts}" th:text="'(시도 ' + ${param.attempts[0]} + '/5)'"></span>
-                        <div class="mt-1" style="height:4px; background:#fde0e0; border-radius:2px; overflow:hidden;">
-                            <div th:if="${param.attempts}" th:style="'width:' + ${T(Integer).parseInt(param.attempts[0]) * 20} + '%; height:100%; background:#c0392b; border-radius:2px;'"></div>
-                        </div>
                     </div>
                     <!-- 로그아웃 메시지 -->
                     <div th:if="${param.logout}" class="alert alert-info small py-2">
