@@ -17,6 +17,9 @@
         .cal-cell:hover { background: #f8fafc; }
         .cal-cell.other { background: #fafbfc; color: #c0c8d0; }
         .cal-cell.today { background: #eef7ff; }
+        .cal-cell.selected { background: #dbeafe; outline: 2px solid #2d6ca8; outline-offset: -2px; }
+        .cal-event-more { font-size: 10px; color: #2d6ca8; cursor: pointer; padding: 1px 5px; font-weight: 600; }
+        .cal-event-more:hover { text-decoration: underline; }
         .cal-day { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
         .cal-event { font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
         .cal-event.HIGH { background: #fdf2f2; color: #c0392b; border-left: 2px solid #c0392b; }
@@ -118,6 +121,15 @@ function goToday() {
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
     renderCalendar();
+
+    // 오늘 날짜 셀 선택 + 스크롤
+    setTimeout(() => {
+        const todayCell = document.querySelector('.cal-cell.today');
+        if (todayCell) {
+            todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            todayCell.click();
+        }
+    }, 100);
 }
 
 function renderCalendar() {
@@ -144,15 +156,23 @@ function renderCalendar() {
         // 해당 날짜 이벤트 추가
         const dateStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         const dayEvents = events.filter(e => e.start && e.start.startsWith(dateStr));
-        dayEvents.forEach(ev => {
+        const maxShow = 2;
+        dayEvents.slice(0, maxShow).forEach(ev => {
             const badge = document.createElement('div');
             const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
             badge.className = 'cal-event ' + cls;
             badge.textContent = ev.title;
-            badge.onclick = function(e) { e.stopPropagation(); window.location.href = '/schedule/edit/' + ev.id; };
+            badge.onclick = function(e) { e.stopPropagation(); window.location.href = '/schedule/edit/' + ev.id + '?from=monthly'; };
             cell.appendChild(badge);
         });
-        cell.onclick = function() { showDayDetail(dateStr, dayEvents); };
+        if (dayEvents.length > maxShow) {
+            const more = document.createElement('div');
+            more.className = 'cal-event-more';
+            more.textContent = '+' + (dayEvents.length - maxShow) + '개 더보기';
+            more.onclick = function(e) { e.stopPropagation(); selectCell(cell); showDayDetail(dateStr, dayEvents); };
+            cell.appendChild(more);
+        }
+        cell.onclick = function() { selectCell(cell); showDayDetail(dateStr, dayEvents); };
         grid.appendChild(cell);
     }
     // 다음 달
@@ -165,12 +185,18 @@ function renderCalendar() {
 
 function createCell(day, isOther, isToday) {
     const cell = document.createElement('div');
-    cell.className = 'cal-cell' + (isOther ? ' other' : '') + (isToday ? ' today' : '');
+    cell.className = 'cal-cell' + (isOther ? ' other' : '') + (isToday ? ' today selected' : '');
     const dayDiv = document.createElement('div');
     dayDiv.className = 'cal-day';
     dayDiv.textContent = day;
     cell.appendChild(dayDiv);
     return cell;
+}
+
+// 셀 선택 (하늘색 배경)
+function selectCell(cell) {
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    cell.classList.add('selected');
 }
 
 function showDayDetail(dateStr, dayEvents) {
@@ -185,12 +211,12 @@ function showDayDetail(dateStr, dayEvents) {
         let html = '<table class="table table-sm small mb-0"><thead class="table-light"><tr><th>일정 제목</th><th>시작</th><th>우선순위</th><th>상태</th><th>관리</th></tr></thead><tbody>';
         dayEvents.forEach(ev => {
             const prCls = ev.priority === 'HIGH' ? 'bg-danger-subtle text-danger' : (ev.priority === 'MID' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success');
-            const stCls = ev.status === 'DONE' ? 'bg-success-subtle text-success' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
+            const stCls = ev.status === 'DONE' ? 'bg-secondary-subtle text-secondary' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
             html += '<tr><td class="fw-semibold">' + ev.title + '</td>';
             html += '<td class="text-muted">' + (ev.start ? ev.start.substring(11, 16) : '-') + '</td>';
             html += '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>';
             html += '<td><span class="badge ' + stCls + '">' + ev.status + '</span></td>';
-            html += '<td><a href="/schedule/edit/' + ev.id + '" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a></td></tr>';
+            html += '<td><a href="/schedule/edit/' + ev.id + '?from=monthly" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a></td></tr>';
         });
         html += '</tbody></table>';
         body.innerHTML = html;

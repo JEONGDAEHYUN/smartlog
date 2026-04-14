@@ -79,6 +79,22 @@
                     <div class="sec-bar"></div>
                     <span class="fw-bold small">이번 주 일정 상세 목록</span>
                 </div>
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <input type="text" class="form-control form-control-sm" style="width:180px;" placeholder="제목 검색..." id="schSearch">
+                    <select class="form-select form-select-sm" style="width:120px;" id="schPriority">
+                        <option value="">전체 우선순위</option>
+                        <option value="HIGH">HIGH</option>
+                        <option value="MID">MID</option>
+                        <option value="LOW">LOW</option>
+                    </select>
+                    <select class="form-select form-select-sm" style="width:130px;" id="schStatus">
+                        <option value="">전체 상태</option>
+                        <option value="PLANNED">PLANNED</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="DONE">DONE</option>
+                    </select>
+                    <button class="btn btn-sm text-white" style="background:var(--n6);" onclick="renderWeekTable()">검색</button>
+                </div>
                 <div class="card border">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 small" id="weekTable">
@@ -100,7 +116,7 @@ let weekStart;
 let selectedDay;
 let currentView = 'week'; // 'week' or 'day'
 let events = [];
-const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 (function init() {
@@ -211,10 +227,14 @@ function renderWeek() {
                 return eDate === dateStr && eHour === h;
             });
             let cellHtml = '<div class="week-cell">';
-            cellEvents.forEach(ev => {
+            const maxShow = 2;
+            cellEvents.slice(0, maxShow).forEach(ev => {
                 const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
-                cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</div>';
+                cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</div>';
             });
+            if (cellEvents.length > maxShow) {
+                cellHtml += '<div style="font-size:10px;color:#2d6ca8;font-weight:600;padding:1px 5px;cursor:pointer;">+' + (cellEvents.length - maxShow) + '개</div>';
+            }
             cellHtml += '</div>';
             grid.innerHTML += cellHtml;
         }
@@ -255,7 +275,7 @@ function renderDay() {
         let cellHtml = '<div class="week-cell">';
         cellEvents.forEach(ev => {
             const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
-            cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</div>';
+            cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</div>';
         });
         cellHtml += '</div>';
         grid.innerHTML += cellHtml;
@@ -279,30 +299,45 @@ function renderWeekTable() {
         titleEl.textContent = '이번 주 일정 상세 목록';
     }
 
+    const keyword = (document.getElementById('schSearch').value || '').toLowerCase();
+    const filterPriority = document.getElementById('schPriority').value;
+    const filterStatus = document.getElementById('schStatus').value;
+
     const weekEvents = events.filter(e => {
         if (!e.start) return false;
         const d = e.start.substring(0, 10);
-        return d >= startStr && d <= endStr;
+        if (d < startStr || d > endStr) return false;
+        if (keyword && !e.title.toLowerCase().includes(keyword)) return false;
+        if (filterPriority && e.priority !== filterPriority) return false;
+        if (filterStatus && e.status !== filterStatus) return false;
+        return true;
     });
 
     if (weekEvents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">이번 주 등록된 일정이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">등록된 일정이 없습니다.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = weekEvents.map(ev => {
+    const maxShow = 10;
+    const showEvents = weekEvents.slice(0, maxShow);
+
+    tbody.innerHTML = showEvents.map(ev => {
         const prCls = ev.priority === 'HIGH' ? 'bg-danger-subtle text-danger' : (ev.priority === 'MID' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success');
-        const stCls = ev.status === 'DONE' ? 'bg-success-subtle text-success' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
+        const stCls = ev.status === 'DONE' ? 'bg-secondary-subtle text-secondary' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
         const titleCls = ev.status === 'DONE' ? 'text-decoration-line-through text-muted' : 'fw-semibold';
         return '<tr>' +
             '<td><span class="badge bg-light text-muted" style="font-family:monospace;">#' + ev.id + '</span></td>' +
-            '<td class="' + titleCls + '" style="cursor:pointer;color:var(--n6);" onclick="window.location.href=\'/schedule/edit/' + ev.id + '\'">' + ev.title + '</td>' +
+            '<td class="' + titleCls + '" style="cursor:pointer;color:var(--n6);" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</td>' +
             '<td class="text-muted">' + (ev.start ? ev.start.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
             '<td class="text-muted">' + (ev.end ? ev.end.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
             '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>' +
             '<td><span class="badge ' + stCls + '">' + ev.status + '</span></td>' +
-            '<td><a href="/schedule/edit/' + ev.id + '" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a></td></tr>';
+            '<td><a href="/schedule/edit/' + ev.id + '?from=weekly" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a></td></tr>';
     }).join('');
+
+    if (weekEvents.length > maxShow) {
+        tbody.innerHTML += '<tr><td colspan="7" class="text-center py-2"><a href="/schedule/list" class="small text-decoration-none" style="color:var(--n6);">+ ' + (weekEvents.length - maxShow) + '개 더보기 → 일정 목록에서 확인</a></td></tr>';
+    }
 }
 </script>
 </body>

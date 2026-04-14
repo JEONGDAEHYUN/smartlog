@@ -26,31 +26,25 @@
         </div>
 
         <div class="p-4">
-            <!-- UUID 매핑 정보 -->
-            <div class="uuid-box mb-3">
-                <span style="color:var(--n6); font-weight:700;">LOG_ID</span>
-                <span style="color:var(--n4); margin:0 8px;">→</span>
-                <span th:text="${worklog.logId}" style="color:#1a7a4a;">UUID</span>
-                <span class="ms-3">|</span>
-                <span class="ms-3">상태:
-                    <span class="badge" th:classappend="${worklog.status == 'SUCCESS'} ? 'bg-success' : (${worklog.status == 'PROCESSING'} ? 'bg-warning' : (${worklog.status == 'FAILED'} ? 'bg-danger' : 'bg-secondary'))" th:text="${worklog.status}">RAW</span>
-                </span>
-                <span class="ms-3">|</span>
-                <span class="ms-3" th:text="${worklog.createdAt != null ? #temporals.format(worklog.createdAt, 'yyyy-MM-dd HH:mm') : '-'}">생성일</span>
+            <!-- 상태 표시 -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge" th:classappend="${worklog.status == 'SUCCESS'} ? 'bg-success' : (${worklog.status == 'PROCESSING'} ? 'bg-warning' : (${worklog.status == 'FAILED'} ? 'bg-danger' : 'bg-secondary'))"
+                      th:text="${worklog.status == 'SUCCESS'} ? '정제 완료' : (${worklog.status == 'PROCESSING'} ? '처리 중' : (${worklog.status == 'FAILED'} ? '정제 실패' : '임시저장'))">상태</span>
+                <span class="text-muted small" th:text="${worklog.createdAt != null ? #temporals.format(worklog.createdAt, 'yyyy-MM-dd HH:mm') : ''}">생성일</span>
             </div>
 
             <!-- 원본 vs 정제 비교 -->
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <div class="card border overflow-hidden">
-                        <div class="compare-header bg-light">원본 메모 (RAW_CONTENT)</div>
+                        <div class="compare-header bg-light">원본 메모</div>
                         <div class="compare-body" th:text="${worklog.rawContent}">원본 내용</div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="card border overflow-hidden" style="border-color:#ddd6fe !important;">
                         <div class="compare-header text-white" style="background:var(--gemini);">
-                            AI 정제 결과 (REFINED_CONTENT)
+                            AI 정제 결과
                         </div>
                         <div class="compare-body" th:if="${worklog.refinedContent != null}" th:text="${worklog.refinedContent}">정제 내용</div>
                         <div class="compare-body text-muted" th:if="${worklog.refinedContent == null}">
@@ -72,11 +66,11 @@
                         AI 정제 요청
                     </button>
                 </form>
-                <!-- SUCCESS 상태일 때 일정 확정 버튼 -->
+                <!-- SUCCESS 상태일 때 일지 확정 버튼 -->
                 <a th:if="${worklog.status == 'SUCCESS'}"
                    th:href="@{/worklog/confirm/{id}(id=${worklog.logId})}"
                    class="btn text-white fw-bold" style="background:#1a7a4a;">
-                    일정 확정 →
+                    일지 확정 →
                 </a>
             </div>
         </div>

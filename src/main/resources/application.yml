@@ -41,7 +41,7 @@ spring:
 # Gemini API 설정
 gemini:
   api-key: ${GEMINI_API_KEY}
-  model: gemini-2.0-flash
+  model: gemini-2.5-flash
 
 # 날씨 API 설정 (OpenWeatherMap)
 weather:

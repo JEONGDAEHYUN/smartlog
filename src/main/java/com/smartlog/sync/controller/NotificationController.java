@@ -11,8 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // 알림 센터 Controller
 @Controller
@@ -34,13 +34,16 @@ public class NotificationController {
         List<NotiInfo> notifications;
 
         if ("unread".equals(filter)) {
-            notifications = notiInfoRepository.findByUserInfoUserIdAndIsRead(userId, "N");
+            notifications = notiInfoRepository.findByUserInfoUserIdAndIsSentAndIsRead(userId, "Y", "N");
         } else {
-            notifications = notiInfoRepository.findByUserInfoUserId(userId);
+            notifications = notiInfoRepository.findByUserInfoUserIdAndIsSent(userId, "Y");
         }
 
-        long totalCount = notiInfoRepository.findByUserInfoUserId(userId).size();
-        long unreadCount = notiInfoRepository.findByUserInfoUserIdAndIsRead(userId, "N").size();
+        // 같은 일정(SCH_ID)의 알림은 최신 1개만 표시
+        notifications = filterLatestPerSchedule(notifications);
+
+        long totalCount = notifications.size();
+        long unreadCount = notifications.stream().filter(n -> "N".equals(n.getIsRead())).count();
 
         model.addAttribute("notifications", notifications);
         model.addAttribute("totalCount", totalCount);
@@ -77,6 +80,24 @@ public class NotificationController {
     public String delete(@PathVariable Long notiId) {
         notiInfoRepository.deleteById(notiId);
         return "redirect:/notifications";
+    }
+
+    // 같은 일정(SCH_ID)에 대해 최신 알림 1개만 유지
+    private List<NotiInfo> filterLatestPerSchedule(List<NotiInfo> notifications) {
+        Map<Long, NotiInfo> latestMap = new LinkedHashMap<>();
+        for (NotiInfo noti : notifications) {
+            Long schId = noti.getSchInfo() != null ? noti.getSchInfo().getSchId() : null;
+            if (schId == null) {
+                // 일정 연결 없는 알림은 그대로 표시
+                latestMap.put(-noti.getNotiId(), noti);
+            } else {
+                NotiInfo existing = latestMap.get(schId);
+                if (existing == null || noti.getNotiDt().isAfter(existing.getNotiDt())) {
+                    latestMap.put(schId, noti);
+                }
+            }
+        }
+        return new ArrayList<>(latestMap.values());
     }
 
     private UserInfo getUser(UserDetails userDetails) {

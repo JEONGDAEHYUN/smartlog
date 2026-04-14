@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(python3 /tmp/fix_sidebar.py)",
+      "Bash(python /tmp/fix_sidebar.py)",
+      "Bash(py:*)"
+    ]
+  }
+}

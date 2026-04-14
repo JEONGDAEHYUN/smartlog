@@ -31,4 +31,6 @@ public class ScheduleDto {
     private String logId; // MongoDB WORKLOG 연결용 (선택)
 
     private String recurring; // 반복 주기 (매일/매주 월요일/매월 등, 빈값이면 단건)
+
+    private String schMemo; // 메모 (특이사항, 내일 예정 등)
 }

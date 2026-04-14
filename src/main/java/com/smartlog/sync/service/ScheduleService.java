@@ -5,6 +5,7 @@ import com.smartlog.sync.entity.mariadb.SchInfo;
 import com.smartlog.sync.entity.mariadb.UserInfo;
 import com.smartlog.sync.repository.mariadb.SchInfoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 public class ScheduleService {
 
     private final SchInfoRepository schInfoRepository;
+    private final NotificationService notificationService;
 
     // 일정 등록
     public SchInfo create(UserInfo user, ScheduleDto dto) {
@@ -28,8 +30,11 @@ public class ScheduleService {
                 .status(dto.getStatus())
                 .logId(dto.getLogId())
                 .recurring(recurring)
+                .schMemo(dto.getSchMemo())
                 .build();
-        return schInfoRepository.save(sch);
+        SchInfo saved = schInfoRepository.save(sch);
+        notificationService.createScheduleNotification(saved);
+        return saved;
     }
 
     // 일정 수정
@@ -43,7 +48,10 @@ public class ScheduleService {
         sch.setStatus(dto.getStatus());
         String recurring = (dto.getRecurring() != null && !dto.getRecurring().isBlank()) ? dto.getRecurring() : null;
         sch.setRecurring(recurring);
-        return schInfoRepository.save(sch);
+        sch.setSchMemo(dto.getSchMemo());
+        SchInfo saved = schInfoRepository.save(sch);
+        notificationService.updateScheduleNotification(saved);
+        return saved;
     }
 
     // 일정 삭제

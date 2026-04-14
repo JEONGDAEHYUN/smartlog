@@ -18,4 +18,13 @@ public interface NotiInfoRepository extends JpaRepository<NotiInfo, Long> {
 
     // 미발송 알림 목록 조회 (스케줄러용)
     List<NotiInfo> findByIsSent(String isSent);
+
+    // 특정 일정의 미발송 알림 조회 (수정 시 기존 알림 삭제용)
+    List<NotiInfo> findBySchInfoSchIdAndIsSent(Long schId, String isSent);
+
+    // 발송완료된 알림 조회
+    List<NotiInfo> findByUserInfoUserIdAndIsSent(Long userId, String isSent);
+
+    // 발송완료 + 미읽음 알림 조회
+    List<NotiInfo> findByUserInfoUserIdAndIsSentAndIsRead(Long userId, String isSent, String isRead);
 }

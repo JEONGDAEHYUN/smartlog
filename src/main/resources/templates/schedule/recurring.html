@@ -57,7 +57,7 @@
                                           th:text="'#' + ${sch.schId}">ID</span></td>
                                 <td class="fw-semibold" style="color:var(--n6); cursor:pointer;"
                                     th:text="${sch.schTitle}"
-                                    th:onclick="'window.location.href=\'/schedule/edit/' + ${sch.schId} + '\''">제목</td>
+                                    th:onclick="'window.location.href=\'/schedule/edit/' + ${sch.schId} + '?from=recurring\''">제목</td>
                                 <td><span class="badge bg-info-subtle text-info" th:text="${sch.recurring}">매주</span></td>
                                 <td class="text-muted" th:text="${#temporals.format(sch.startDt, 'HH:mm')}">09:00</td>
                                 <td class="text-muted" th:text="${sch.endDt != null ? #temporals.format(sch.endDt, 'HH:mm') : '-'}">10:00</td>
@@ -68,12 +68,12 @@
                                 </td>
                                 <td>
                                     <span class="badge"
-                                          th:classappend="${sch.status == 'DONE'} ? 'bg-success-subtle text-success' : (${sch.status == 'IN_PROGRESS'} ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info')"
+                                          th:classappend="${sch.status == 'DONE'} ? 'bg-secondary-subtle text-secondary' : (${sch.status == 'IN_PROGRESS'} ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info')"
                                           th:text="${sch.status}">PLANNED</span>
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <a th:href="@{/schedule/edit/{id}(id=${sch.schId})}"
+                                        <a th:href="@{/schedule/edit/{id}(id=${sch.schId}, from='recurring')}"
                                            class="btn btn-sm py-0 px-2" style="font-size:10px; background:var(--n6); color:#fff;">수정</a>
                                         <form th:action="@{/schedule/delete/{id}(id=${sch.schId})}" method="post"
                                               onsubmit="return confirm('정말 삭제하시겠습니까?');">

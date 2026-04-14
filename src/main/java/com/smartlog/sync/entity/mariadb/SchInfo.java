@@ -44,6 +44,9 @@ public class SchInfo {
     @Column(name = "RECURRING", length = 30)
     private String recurring; // 반복 주기 (매일/매주 월요일/매월 등, NULL이면 단건)
 
+    @Column(name = "SCH_MEMO", length = 500)
+    private String schMemo; // 메모 (특이사항, 내일 예정 등)
+
     @Column(name = "REG_DT", nullable = false, updatable = false)
     private LocalDateTime regDt; // 등록일
 

@@ -26,9 +26,18 @@ public class WorklogController {
     private final ScheduleService scheduleService;
     private final UserInfoRepository userInfoRepository;
 
-    // 원본 메모 작성 페이지
+    // 원본 메모 작성 페이지 (오늘 일정 함께 표시)
     @GetMapping("/write")
-    public String writePage() {
+    public String writePage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        UserInfo user = userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        if (user != null) {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.util.List<com.smartlog.sync.entity.mariadb.SchInfo> todaySchedules =
+                    scheduleService.getByUserId(user.getUserId()).stream()
+                            .filter(s -> s.getStartDt().toLocalDate().equals(today))
+                            .toList();
+            model.addAttribute("todaySchedules", todaySchedules);
+        }
         return "worklog/write";
     }
 
@@ -81,17 +90,22 @@ public class WorklogController {
         return "worklog/archive";
     }
 
-    // 일정 확정 페이지 (AI 정제 결과 → 일정 매핑)
+    // 일지 확정 페이지
     @GetMapping("/confirm/{logId}")
     public String confirmPage(@PathVariable String logId, Model model) {
         Worklog worklog = worklogService.getByLogId(logId);
         model.addAttribute("worklog", worklog);
 
-        // 기본값 세팅
+        // 기본값: "M월 d일 업무일지"
         ScheduleDto dto = new ScheduleDto();
         dto.setLogId(logId);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        String[] dayNames = {"월", "화", "수", "목", "금", "토", "일"};
+        String dayOfWeek = dayNames[today.getDayOfWeek().getValue() - 1];
+        dto.setSchTitle(today.getMonthValue() + "월 " + today.getDayOfMonth() + "일(" + dayOfWeek + ") 업무일지");
+        dto.setStartDt(java.time.LocalDateTime.now());
         dto.setPriority("MID");
-        dto.setStatus("PLANNED");
+        dto.setStatus("DONE");
         model.addAttribute("scheduleDto", dto);
 
         return "worklog/confirm";

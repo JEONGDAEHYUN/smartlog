@@ -27,21 +27,21 @@
 
         <div class="p-4">
             <div class="row g-4">
-                <!-- 좌측: 메모 입력 -->
+                <!-- 좌측: 업무일지 작성 -->
                 <div class="col-lg-7">
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <div class="sec-bar"></div>
-                        <span class="fw-bold small">비정형 데이터 입력</span>
-                        <span class="gemini-badge ms-2">Gemini API 연동</span>
+                        <span class="fw-bold small">오늘의 업무 기록</span>
+                        <span class="gemini-badge ms-2">Gemini AI 정제</span>
                     </div>
 
                     <form th:action="@{/worklog/write}" method="post">
                         <div class="mb-3">
                             <label for="rawContent" class="form-label small fw-semibold">
-                                업무 내용 <span class="text-danger">*</span>
+                                오늘 수행한 업무 내용 <span class="text-danger">*</span>
                             </label>
                             <textarea class="form-control" id="rawContent" name="rawContent" rows="12"
-                                      placeholder="오늘의 업무 내용을 자유롭게 입력하세요&#10;&#10;예시:&#10;- 엔진 마운트 볼트 토크 점검했음&#10;- 볼트 4개 중 2번 볼트 토크값 규정치 미달 확인&#10;- 재조임 후 재측정 완료, 정상 확인"
+                                      placeholder="오늘 수행한 업무 내용을 자유롭게 작성하세요"
                                       required oninput="countChars(this)" maxlength="4000"></textarea>
                             <div class="char-count" id="charCount">0 / 4,000자</div>
                         </div>
@@ -50,43 +50,70 @@
                                     class="btn btn-outline-secondary flex-fill">임시저장</button>
                             <button type="submit" name="aiRefine" value="true"
                                     class="btn btn-gemini text-white flex-fill fw-bold">
-                                AI 가공 요청 (Gemini API)
+                                AI 정제 요청
                             </button>
                         </div>
                     </form>
                 </div>
 
-                <!-- 우측: 입력 가이드 -->
+                <!-- 우측: 오늘 일정 + 가이드 -->
                 <div class="col-lg-5">
+                    <!-- 오늘 일정 -->
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <div class="sec-bar"></div>
-                        <span class="fw-bold small">입력 가이드</span>
-                    </div>
-
-                    <div class="alert alert-info small py-2 mb-3">
-                        <strong>어떻게 쓰면 AI가 잘 분석하나요?</strong><br>
-                        날짜/시간, 장비명, 작업 내용, 결과를 포함하면 더 정확한 일정으로 변환됩니다.
+                        <span class="fw-bold small">오늘의 일정</span>
+                        <span class="badge bg-secondary-subtle text-secondary small ms-1"
+                              th:text="${todaySchedules != null ? #lists.size(todaySchedules) + '건' : '0건'}">0건</span>
                     </div>
 
                     <div class="card border mb-3">
-                        <div class="card-body">
-                            <div class="small fw-bold text-success mb-2">좋은 예시</div>
-                            <div class="small text-muted p-2 rounded" style="background:#f8fafc; border-left:3px solid #1a7a4a; line-height:1.9;">
-                                F-15K 601호기 엔진 마운트 볼트<br>
-                                토크 점검 — 2번 볼트 규정치 미달<br>
-                                (45Nm → 38Nm), 재조임 후 정상<br>
-                                확인. P/N 123-456 교체 필요.
+                        <div class="card-body p-0">
+                            <div th:if="${todaySchedules == null || #lists.isEmpty(todaySchedules)}"
+                                 class="text-center text-muted small py-3">오늘 등록된 일정이 없습니다.</div>
+                            <div th:each="sch : ${todaySchedules}" class="px-3 py-2 border-bottom small d-flex align-items-center gap-2">
+                                <input type="checkbox" class="form-check-input sch-check" style="cursor:pointer;"
+                                       th:data-title="${sch.schTitle}"
+                                       th:data-time="${#temporals.format(sch.startDt, 'HH:mm')}"
+                                       th:data-end="${sch.endDt != null ? #temporals.format(sch.endDt, 'HH:mm') : ''}"
+                                       th:data-priority="${sch.priority}"
+                                       th:data-status="${sch.status}"
+                                       th:data-memo="${sch.schMemo != null ? sch.schMemo : ''}">
+                                <div class="flex-grow-1">
+                                    <span class="fw-semibold" th:text="${sch.schTitle}">일정</span>
+                                    <span class="text-muted ms-1" th:text="${#temporals.format(sch.startDt, 'HH:mm')}">09:00</span>
+                                </div>
+                                <span class="badge"
+                                      th:classappend="${sch.status == 'DONE'} ? 'bg-secondary-subtle text-secondary' : (${sch.status == 'IN_PROGRESS'} ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info')"
+                                      th:text="${sch.status}">PLANNED</span>
                             </div>
                         </div>
+                        <!-- 메모로 옮기기 버튼 -->
+                        <div th:if="${todaySchedules != null && !#lists.isEmpty(todaySchedules)}"
+                             class="card-footer bg-white text-center py-2">
+                            <button type="button" class="btn btn-sm text-white" style="background:var(--n6);" onclick="moveToMemo()">
+                                ◀ 선택한 업무를 메모에 추가
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 작성 가이드 -->
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="sec-bar"></div>
+                        <span class="fw-bold small">작성 가이드</span>
+                    </div>
+
+                    <div class="alert alert-info small py-2 mb-3">
+                        <strong>이렇게 작성하면 AI가 잘 정리해요</strong><br>
+                        수행한 작업, 결과, 특이사항을 포함해 주세요.
                     </div>
 
                     <div class="card border">
                         <div class="card-body">
-                            <div class="small fw-bold text-danger mb-2">개선 필요</div>
-                            <div class="small text-muted p-2 rounded" style="background:#f8fafc; border-left:3px solid #c0392b; line-height:1.9;">
-                                오늘 점검했는데 뭔가 이상한거<br>
-                                같아서 다시 봤음. 나중에 확인<br>
-                                해야할듯.
+                            <div class="small fw-bold text-success mb-2">좋은 예시</div>
+                            <div class="small text-muted p-2 rounded" style="background:#f8fafc; border-left:3px solid #1a7a4a; line-height:1.9;">
+                                엔진 마운트 볼트 토크 점검 완료<br>
+                                2번 볼트 규정치 미달 → 재조임 후 정상<br>
+                                P/N 123-456 부품 교체 필요
                             </div>
                         </div>
                     </div>
@@ -104,6 +131,40 @@
         const display = document.getElementById('charCount');
         display.textContent = cnt.toLocaleString() + ' / 4,000자';
         display.className = 'char-count' + (cnt > 3800 ? (cnt > 4000 ? ' over' : ' warn') : '');
+    }
+
+    // 선택한 일정을 메모에 추가
+    function moveToMemo() {
+        const checks = document.querySelectorAll('.sch-check:checked');
+        if (checks.length === 0) {
+            alert('메모에 추가할 업무를 선택해주세요.');
+            return;
+        }
+
+        const textarea = document.getElementById('rawContent');
+        let text = '';
+
+        checks.forEach(chk => {
+            const title = chk.dataset.title;
+            const time = chk.dataset.time;
+            const end = chk.dataset.end;
+            const memo = chk.dataset.memo;
+            const timeRange = end ? time + '~' + end : time;
+            text += '- [' + timeRange + '] ' + title;
+            if (memo) text += ' — ' + memo;
+            text += '\n';
+            chk.checked = false;
+        });
+
+        text += '\n[특이사항]\n\n[비고]\n';
+
+        // 기존 내용 뒤에 추가
+        if (textarea.value && !textarea.value.endsWith('\n')) {
+            textarea.value += '\n';
+        }
+        textarea.value += text;
+        countChars(textarea);
+        textarea.focus();
     }
 </script>
 </body>

@@ -18,7 +18,7 @@ public class GeminiService {
     private final GeminiConfig geminiConfig;
     private final RestTemplate restTemplate;
 
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
+    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s";
 
     // 업무 메모를 정제된 업무일지로 변환
     public String refineWorklog(String rawContent) {
@@ -29,10 +29,21 @@ public class GeminiService {
                 아래 원본 메모를 읽고, 정형화된 업무일지로 변환해주세요.
 
                 [변환 규칙]
-                1. 핵심 업무 내용을 간결하게 정리
-                2. 날짜/시간, 장비명, 작업 내용, 결과를 구분
-                3. 불필요한 구어체 제거, 공식적 문체로 변환
-                4. 항목별로 구분하여 가독성 확보
+                1. 아래 형식으로 정리할 것
+                2. 불필요한 구어체 제거, 공식적 문체로 변환
+                3. [시간] 형태는 그대로 유지
+                4. 특이사항과 비고 항목이 있으면 그대로 정리
+
+                [출력 형식]
+                ■ 수행 업무
+                1. [시간] 업무 내용 — 결과
+                2. [시간] 업무 내용 — 결과
+
+                ■ 특이사항
+                - 내용
+
+                ■ 비고
+                - 내용
 
                 [원본 메모]
                 """ + rawContent + """
