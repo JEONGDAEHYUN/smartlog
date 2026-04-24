@@ -38,11 +38,26 @@
                                 <label for="reportType" class="form-label small fw-semibold">
                                     보고서 종류 <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="reportType" name="reportType" required>
+                                <select class="form-select" id="reportType" name="reportType" required onchange="updateDateRange()">
                                     <option value="weekly">주간 업무요약 보고서</option>
                                     <option value="monthly" selected>월간 업무요약 보고서</option>
                                     <option value="handover">인수인계 보고서</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="startDate" class="form-label small fw-semibold">
+                                    시작일 <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="endDate" class="form-label small fw-semibold">
+                                    종료일 <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" class="form-control" id="endDate" name="endDate" required>
                             </div>
                         </div>
 
@@ -79,5 +94,33 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 보고서 종류에 따라 기간 자동 설정
+    function updateDateRange() {
+        const type = document.getElementById('reportType').value;
+        const today = new Date();
+        const endDate = today.toISOString().split('T')[0];
+        let startDate;
+
+        if (type === 'weekly') {
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 6);
+            startDate = weekAgo.toISOString().split('T')[0];
+        } else if (type === 'monthly') {
+            const monthAgo = new Date(today.getFullYear(), today.getMonth(), 1);
+            startDate = monthAgo.toISOString().split('T')[0];
+        } else {
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            startDate = threeMonthsAgo.toISOString().split('T')[0];
+        }
+
+        document.getElementById('startDate').value = startDate;
+        document.getElementById('endDate').value = endDate;
+    }
+
+    // 페이지 로드 시 기본 기간 설정
+    updateDateRange();
+</script>
 </body>
 </html>

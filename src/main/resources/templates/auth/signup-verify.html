@@ -59,11 +59,6 @@
                 <!-- 에러 메시지 -->
                 <div th:if="${error}" class="alert alert-danger small py-2" th:text="${error}"></div>
 
-                <!-- 개발용: 인증 코드 표시 -->
-                <div th:if="${verifyCode}" class="alert alert-warning small py-2 mb-3">
-                    [개발용] 인증 코드: <strong th:text="${verifyCode}">123456</strong>
-                </div>
-
                 <!-- 인증코드 입력 폼 -->
                 <form th:action="@{/signup/verify}" method="post">
                     <input type="hidden" name="email" th:value="${email}">

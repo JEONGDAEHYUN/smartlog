@@ -4,6 +4,7 @@ import com.smartlog.sync.entity.mongodb.Worklog;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // 업무일지 Repository (MongoDB)
@@ -18,4 +19,7 @@ public interface WorklogRepository extends MongoRepository<Worklog, String> {
 
     // 특정 사용자의 특정 상태 업무일지 조회
     List<Worklog> findByUserIdAndStatus(Long userId, String status);
+
+    // 기간별 업무일지 조회 (보고서 생성용)
+    List<Worklog> findByUserIdAndCreatedAtBetween(Long userId, LocalDateTime startDt, LocalDateTime endDt);
 }

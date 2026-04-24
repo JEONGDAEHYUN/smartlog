@@ -27,4 +27,7 @@ public interface NotiInfoRepository extends JpaRepository<NotiInfo, Long> {
 
     // 발송완료 + 미읽음 알림 조회
     List<NotiInfo> findByUserInfoUserIdAndIsSentAndIsRead(Long userId, String isSent, String isRead);
+
+    // 특정 일정의 모든 알림 삭제 (일정 삭제 시 FK 제약 회피용)
+    void deleteBySchInfoSchId(Long schId);
 }

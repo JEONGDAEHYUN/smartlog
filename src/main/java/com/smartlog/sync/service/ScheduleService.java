@@ -3,11 +3,14 @@ package com.smartlog.sync.service;
 import com.smartlog.sync.dto.ScheduleDto;
 import com.smartlog.sync.entity.mariadb.SchInfo;
 import com.smartlog.sync.entity.mariadb.UserInfo;
+import com.smartlog.sync.repository.mariadb.NotiInfoRepository;
 import com.smartlog.sync.repository.mariadb.SchInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // 일정 관련 비즈니스 로직
@@ -16,6 +19,7 @@ import java.util.List;
 public class ScheduleService {
 
     private final SchInfoRepository schInfoRepository;
+    private final NotiInfoRepository notiInfoRepository;
     private final NotificationService notificationService;
 
     // 일정 등록
@@ -54,8 +58,10 @@ public class ScheduleService {
         return saved;
     }
 
-    // 일정 삭제
+    // 일정 삭제 — 관련 알림 먼저 삭제 후 일정 삭제 (FK 제약 회피)
+    @Transactional
     public void delete(Long schId) {
+        notiInfoRepository.deleteBySchInfoSchId(schId);
         schInfoRepository.deleteById(schId);
     }
 
@@ -73,5 +79,19 @@ public class ScheduleService {
     public SchInfo getById(Long schId) {
         return schInfoRepository.findById(schId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
+    }
+
+    // 시간 충돌 검사 — 등록/수정 전 호출
+    // excludeSchId: 수정 시 자기 자신 제외 (등록 시 null 전달)
+    public List<SchInfo> checkConflict(Long userId, LocalDateTime newStart, LocalDateTime newEnd, Long excludeSchId) {
+        if (newStart == null || newEnd == null) return List.of();
+        if (!newEnd.isAfter(newStart)) return List.of();
+        List<SchInfo> conflicts = schInfoRepository.findConflicts(userId, newStart, newEnd);
+        if (excludeSchId != null) {
+            conflicts = conflicts.stream()
+                    .filter(s -> !excludeSchId.equals(s.getSchId()))
+                    .toList();
+        }
+        return conflicts;
     }
 }

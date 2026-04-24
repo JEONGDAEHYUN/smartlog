@@ -65,11 +65,15 @@ public class AuthController {
         // 세션에 가입 정보 임시 저장
         session.setAttribute("SIGNUP_DTO", signupDto);
 
-        // 인증 코드 생성
-        String code = emailVerificationService.generateCode(session, signupDto.getUserEmail());
+        // 인증 코드 생성 + 이메일 발송
+        try {
+            emailVerificationService.generateCode(session, signupDto.getUserEmail());
+        } catch (IllegalStateException e) {
+            model.addAttribute("error", e.getMessage());
+            return "auth/signup";
+        }
 
         model.addAttribute("email", signupDto.getUserEmail());
-        model.addAttribute("verifyCode", code); // 실제 서비스에선 이메일로 발송, 지금은 화면에 표시
         model.addAttribute("step", 2);
         return "auth/signup-verify";
     }
@@ -132,9 +136,13 @@ public class AuthController {
     // Step 1: 이메일 입력 → 인증코드 발송
     @PostMapping("/find-pw/send")
     public String findPwSendCode(@RequestParam String userEmail, Model model, HttpSession session) {
-        String code = emailVerificationService.generateCode(session, userEmail);
+        try {
+            emailVerificationService.generateCode(session, userEmail);
+        } catch (IllegalStateException e) {
+            model.addAttribute("error", e.getMessage());
+            return "auth/find-pw";
+        }
         model.addAttribute("userEmail", userEmail);
-        model.addAttribute("verifyCode", code); // 실제 서비스에선 이메일로 발송
         model.addAttribute("step", 2);
         return "auth/find-pw";
     }

@@ -24,6 +24,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/schedule")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
@@ -254,6 +255,40 @@ public class ScheduleController {
         if (recurring.contains("토요일")) return java.time.DayOfWeek.SATURDAY;
         if (recurring.contains("일요일")) return java.time.DayOfWeek.SUNDAY;
         return null;
+    }
+
+    // 충돌 검사 API — 등록/수정 전 모달 경고용
+    @GetMapping("/api/check-conflict")
+    @ResponseBody
+    public List<Map<String, Object>> checkConflict(@AuthenticationPrincipal UserDetails userDetails,
+                                                   @RequestParam String startDt,
+                                                   @RequestParam String endDt,
+                                                   @RequestParam(required = false) Long excludeSchId) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return List.of();
+
+        java.time.LocalDateTime start;
+        java.time.LocalDateTime end;
+        try {
+            start = java.time.LocalDateTime.parse(startDt);
+            end = java.time.LocalDateTime.parse(endDt);
+        } catch (Exception e) {
+            return List.of();
+        }
+
+        List<SchInfo> conflicts = scheduleService.checkConflict(user.getUserId(), start, end, excludeSchId);
+        log.info("[충돌검사] userId={}, range={}~{}, excludeSchId={}, 결과={}건",
+                user.getUserId(), start, end, excludeSchId, conflicts.size());
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm");
+        return conflicts.stream().map(s -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("schId", s.getSchId());
+            m.put("title", s.getSchTitle());
+            m.put("startDt", s.getStartDt().format(fmt));
+            m.put("endDt", s.getEndDt() != null ? s.getEndDt().format(fmt) : "");
+            m.put("priority", s.getPriority());
+            return m;
+        }).toList();
     }
 
     private void addStats(Model model, List<SchInfo> schedules) {

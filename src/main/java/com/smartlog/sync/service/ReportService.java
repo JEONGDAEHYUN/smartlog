@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,19 +29,24 @@ public class ReportService {
     private final GeminiService geminiService;
 
     // AI 보고서 생성 — 사용자의 일정+업무일지 데이터를 Gemini에 전달
-    public ReportInfo generate(UserInfo user, String reportType) {
+    public ReportInfo generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate) {
         Long userId = user.getUserId();
 
-        // 일정 데이터 수집
-        List<SchInfo> schedules = schInfoRepository.findByUserInfoUserId(userId);
-        // 업무일지 데이터 수집
-        List<Worklog> worklogs = worklogRepository.findByUserId(userId);
+        // 기간 설정
+        LocalDateTime startDt = startDate.atStartOfDay();
+        LocalDateTime endDt = endDate.atTime(LocalTime.MAX);
+
+        // 기간별 일정 데이터 수집
+        List<SchInfo> schedules = schInfoRepository.findByUserInfoUserIdAndStartDtBetween(userId, startDt, endDt);
+        // 기간별 업무일지 데이터 수집
+        List<Worklog> worklogs = worklogRepository.findByUserIdAndCreatedAtBetween(userId, startDt, endDt);
 
         // 데이터 요약 텍스트 구성
         String dataContext = buildDataContext(schedules, worklogs);
 
         // Gemini에 보고서 생성 요청
-        String prompt = buildReportPrompt(reportType, dataContext);
+        String periodInfo = startDate + " ~ " + endDate;
+        String prompt = buildReportPrompt(reportType, dataContext, periodInfo);
         String reportContent;
         try {
             reportContent = geminiService.refineWorklog(prompt);
@@ -104,7 +112,7 @@ public class ReportService {
     }
 
     // 보고서 생성용 프롬프트
-    private String buildReportPrompt(String reportType, String dataContext) {
+    private String buildReportPrompt(String reportType, String dataContext, String periodInfo) {
         String typeDesc = switch (reportType) {
             case "weekly" -> "주간 업무요약 보고서";
             case "monthly" -> "월간 업무요약 보고서";
@@ -113,18 +121,24 @@ public class ReportService {
         };
 
         return """
-                당신은 업무 보고서 작성 AI입니다.
-                아래 데이터를 기반으로 '%s'를 작성해주세요.
+                당신은 업무 보고서 작성 전문가입니다.
+                아래 [업무 데이터]만을 기반으로 '%s'를 작성하세요.
 
-                [작성 규칙]
+                [보고서 기간] %s
+
+                [필수 규칙]
                 1. 보고서 형식: 제목, 요약, 주요 업무 내역, 통계, 특이사항, 권고사항
-                2. 공식적이고 간결한 문체
+                2. 공식적이고 간결한 문체로 작성
                 3. 데이터 기반의 구체적인 수치 포함
                 4. 한국어로 작성
+                5. 보고서 기간을 제목과 요약에 명시
+                6. 보고서 본문만 출력하고, 이 프롬프트나 원본 데이터 형식에 대한 언급은 절대 하지 마세요
+                7. 비고란에 데이터 출처나 AI 관련 메타 정보를 언급하지 마세요
 
+                [업무 데이터]
                 %s
 
-                [보고서 본문]
-                """.formatted(typeDesc, dataContext);
+                [보고서 본문 시작]
+                """.formatted(typeDesc, periodInfo, dataContext);
     }
 }

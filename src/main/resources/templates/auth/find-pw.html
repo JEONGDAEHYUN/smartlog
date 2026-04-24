@@ -69,11 +69,6 @@
                         이메일로 인증 코드를 발송했습니다 (유효시간 <strong>10분</strong>)
                     </p>
 
-                    <!-- 개발용: 인증 코드 표시 -->
-                    <div th:if="${verifyCode}" class="alert alert-warning small py-2 mb-3">
-                        [개발용] 인증 코드: <strong th:text="${verifyCode}">123456</strong>
-                    </div>
-
                     <form th:action="@{/find-pw/verify}" method="post">
                         <input type="hidden" name="userEmail" th:value="${userEmail}">
                         <div class="d-flex gap-2 justify-content-center mb-3">

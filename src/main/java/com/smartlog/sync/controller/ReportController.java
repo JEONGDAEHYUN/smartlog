@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 // 지능형 리포트 Controller
@@ -34,11 +35,16 @@ public class ReportController {
     // AI 보고서 생성 처리
     @PostMapping("/create")
     public String create(@AuthenticationPrincipal UserDetails userDetails,
-                         @RequestParam String reportType) {
+                         @RequestParam String reportType,
+                         @RequestParam String startDate,
+                         @RequestParam String endDate) {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
-        ReportInfo report = reportService.generate(user, reportType);
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+
+        ReportInfo report = reportService.generate(user, reportType, start, end);
         return "redirect:/report/detail/" + report.getRepId();
     }
 

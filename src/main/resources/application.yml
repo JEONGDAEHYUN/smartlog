@@ -32,18 +32,28 @@ spring:
     cache: false               # 캐시 비활성화 (개발 중 템플릿 즉시 반영)
     encoding: UTF-8
 
-  # Spring Security 기본 인증 계정 (추후 DB 기반 인증으로 교체 예정)
-  security:
-    user:
-      name: ${SECURITY_USERNAME}
-      password: ${SECURITY_PASSWORD}
+  # Gmail SMTP 설정 (이메일 인증코드 발송)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
 
 # Gemini API 설정
 gemini:
   api-key: ${GEMINI_API_KEY}
   model: gemini-2.5-flash
 
-# 날씨 API 설정 (OpenWeatherMap)
+# 날씨 API 설정 (기상청 단기예보 - 공공데이터포털)
 weather:
   api-key: ${WEATHER_API_KEY:}
 
