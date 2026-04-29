@@ -1,10 +1,11 @@
 package com.smartlog.sync.controller;
 
+import com.smartlog.sync.dto.SchInfoDto;
 import com.smartlog.sync.dto.ScheduleDto;
-import com.smartlog.sync.entity.mariadb.SchInfo;
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.repository.mariadb.UserInfoRepository;
+import com.smartlog.sync.dto.ScheduleStatsDto;
+import com.smartlog.sync.repository.entity.UserInfo;
 import com.smartlog.sync.service.ScheduleService;
+import com.smartlog.sync.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,8 +14,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +27,7 @@ import java.util.Map;
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
-    private final UserInfoRepository userInfoRepository;
+    private final UserService userService;
 
     // 일정 목록 (주간/월간 통합)
     @GetMapping("/list")
@@ -36,22 +35,9 @@ public class ScheduleController {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
-        List<SchInfo> schedules = scheduleService.getByUserId(user.getUserId());
-
-        // KPI 통계
-        long totalCount = schedules.size();
-        long highCount = schedules.stream().filter(s -> "HIGH".equals(s.getPriority())).count();
-        long midCount = schedules.stream().filter(s -> "MID".equals(s.getPriority())).count();
-        long lowCount = schedules.stream().filter(s -> "LOW".equals(s.getPriority())).count();
-        long doneCount = schedules.stream().filter(s -> "DONE".equals(s.getStatus())).count();
-
+        List<SchInfoDto> schedules = scheduleService.getByUserId(user.getUserId());
         model.addAttribute("schedules", schedules);
-        model.addAttribute("totalCount", totalCount);
-        model.addAttribute("highCount", highCount);
-        model.addAttribute("midCount", midCount);
-        model.addAttribute("lowCount", lowCount);
-        model.addAttribute("doneCount", doneCount);
-
+        addStatsToModel(model, ScheduleStatsDto.from(schedules));
         return "schedule/list";
     }
 
@@ -81,7 +67,7 @@ public class ScheduleController {
     @GetMapping("/edit/{schId}")
     public String editPage(@PathVariable Long schId,
                            @RequestParam(required = false) String from, Model model) {
-        SchInfo sch = scheduleService.getById(schId);
+        SchInfoDto sch = scheduleService.getById(schId);
         ScheduleDto dto = new ScheduleDto();
         dto.setSchId(sch.getSchId());
         dto.setSchTitle(sch.getSchTitle());
@@ -127,7 +113,7 @@ public class ScheduleController {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
-        List<SchInfo> recurringList = scheduleService.getRecurringByUserId(user.getUserId());
+        List<SchInfoDto> recurringList = scheduleService.getRecurringByUserId(user.getUserId());
         model.addAttribute("recurringList", recurringList);
         return "schedule/recurring";
     }
@@ -160,7 +146,7 @@ public class ScheduleController {
         List<Map<String, Object>> result = new java.util.ArrayList<>();
         java.time.LocalDate today = java.time.LocalDate.now();
 
-        for (SchInfo sch : scheduleService.getByUserId(user.getUserId())) {
+        for (SchInfoDto sch : scheduleService.getByUserId(user.getUserId())) {
             // 원본 일정 추가
             result.add(toEventMap(sch, sch.getStartDt(), sch.getEndDt(), sch.getStatus()));
 
@@ -188,7 +174,6 @@ public class ScheduleController {
                     } else if ("매월 말일".equals(rec)) {
                         match = candidate.getDayOfMonth() == candidate.lengthOfMonth();
                     } else if (rec.startsWith("매월")) {
-                        // "매월 둘째주 화요일" 형태 파싱
                         match = matchMonthlyRecurring(rec, candidate);
                     }
 
@@ -212,7 +197,7 @@ public class ScheduleController {
         return result;
     }
 
-    private Map<String, Object> toEventMap(SchInfo sch, java.time.LocalDateTime start, java.time.LocalDateTime end, String status) {
+    private Map<String, Object> toEventMap(SchInfoDto sch, java.time.LocalDateTime start, java.time.LocalDateTime end, String status) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", sch.getSchId());
         map.put("title", sch.getSchTitle());
@@ -225,7 +210,6 @@ public class ScheduleController {
     }
 
     private boolean matchMonthlyRecurring(String rec, java.time.LocalDate candidate) {
-        // "매월 첫째주 월요일", "매월 둘째주 화요일" 등
         String body = rec.replace("매월 ", "");
         String[] parts = body.split(" ");
         if (parts.length != 2) return false;
@@ -240,7 +224,6 @@ public class ScheduleController {
         java.time.DayOfWeek targetDay = parseDayOfWeek("매주 " + parts[1]);
         if (targetWeek == 0 || targetDay == null) return false;
 
-        // 해당 월의 N째주 X요일 계산
         if (candidate.getDayOfWeek() != targetDay) return false;
         int weekOfMonth = (candidate.getDayOfMonth() - 1) / 7 + 1;
         return weekOfMonth == targetWeek;
@@ -276,7 +259,7 @@ public class ScheduleController {
             return List.of();
         }
 
-        List<SchInfo> conflicts = scheduleService.checkConflict(user.getUserId(), start, end, excludeSchId);
+        List<SchInfoDto> conflicts = scheduleService.checkConflict(user.getUserId(), start, end, excludeSchId);
         log.info("[충돌검사] userId={}, range={}~{}, excludeSchId={}, 결과={}건",
                 user.getUserId(), start, end, excludeSchId, conflicts.size());
         java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm");
@@ -291,15 +274,20 @@ public class ScheduleController {
         }).toList();
     }
 
-    private void addStats(Model model, List<SchInfo> schedules) {
-        model.addAttribute("totalCount", schedules.size());
-        model.addAttribute("highCount", schedules.stream().filter(s -> "HIGH".equals(s.getPriority())).count());
-        model.addAttribute("midCount", schedules.stream().filter(s -> "MID".equals(s.getPriority())).count());
-        model.addAttribute("lowCount", schedules.stream().filter(s -> "LOW".equals(s.getPriority())).count());
-        model.addAttribute("doneCount", schedules.stream().filter(s -> "DONE".equals(s.getStatus())).count());
+    // 통계 데이터를 model에 추가 (ScheduleStatsDto 활용)
+    private void addStats(Model model, List<SchInfoDto> schedules) {
+        addStatsToModel(model, ScheduleStatsDto.from(schedules));
+    }
+
+    private void addStatsToModel(Model model, ScheduleStatsDto stats) {
+        model.addAttribute("totalCount", stats.getTotalCount());
+        model.addAttribute("highCount", stats.getHighCount());
+        model.addAttribute("midCount", stats.getMidCount());
+        model.addAttribute("lowCount", stats.getLowCount());
+        model.addAttribute("doneCount", stats.getDoneCount());
     }
 
     private UserInfo getUser(UserDetails userDetails) {
-        return userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        return userService.getEntityByEmail(userDetails.getUsername());
     }
 }

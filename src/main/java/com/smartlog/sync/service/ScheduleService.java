@@ -1,97 +1,38 @@
 package com.smartlog.sync.service;
 
+import com.smartlog.sync.dto.SchInfoDto;
 import com.smartlog.sync.dto.ScheduleDto;
-import com.smartlog.sync.entity.mariadb.SchInfo;
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.repository.mariadb.NotiInfoRepository;
-import com.smartlog.sync.repository.mariadb.SchInfoRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.smartlog.sync.dto.ScheduleStatsDto;
+import com.smartlog.sync.repository.entity.SchInfo;
+import com.smartlog.sync.repository.entity.UserInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 일정 관련 비즈니스 로직
-@Service
-@RequiredArgsConstructor
-public class ScheduleService {
+// 일정 관련 비즈니스 로직 인터페이스
+public interface ScheduleService {
 
-    private final SchInfoRepository schInfoRepository;
-    private final NotiInfoRepository notiInfoRepository;
-    private final NotificationService notificationService;
+    // 일정 등록 (NotificationService에 SchInfo 전달 필요 → 엔티티 반환)
+    SchInfo create(UserInfo user, ScheduleDto dto);
 
-    // 일정 등록
-    public SchInfo create(UserInfo user, ScheduleDto dto) {
-        String recurring = (dto.getRecurring() != null && !dto.getRecurring().isBlank()) ? dto.getRecurring() : null;
-        SchInfo sch = SchInfo.builder()
-                .userInfo(user)
-                .schTitle(dto.getSchTitle())
-                .startDt(dto.getStartDt())
-                .endDt(dto.getEndDt())
-                .priority(dto.getPriority())
-                .status(dto.getStatus())
-                .logId(dto.getLogId())
-                .recurring(recurring)
-                .schMemo(dto.getSchMemo())
-                .build();
-        SchInfo saved = schInfoRepository.save(sch);
-        notificationService.createScheduleNotification(saved);
-        return saved;
-    }
+    // 일정 수정 (내부용 — 엔티티 반환)
+    SchInfo update(Long schId, ScheduleDto dto);
 
-    // 일정 수정
-    public SchInfo update(Long schId, ScheduleDto dto) {
-        SchInfo sch = schInfoRepository.findById(schId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
-        sch.setSchTitle(dto.getSchTitle());
-        sch.setStartDt(dto.getStartDt());
-        sch.setEndDt(dto.getEndDt());
-        sch.setPriority(dto.getPriority());
-        sch.setStatus(dto.getStatus());
-        String recurring = (dto.getRecurring() != null && !dto.getRecurring().isBlank()) ? dto.getRecurring() : null;
-        sch.setRecurring(recurring);
-        sch.setSchMemo(dto.getSchMemo());
-        SchInfo saved = schInfoRepository.save(sch);
-        notificationService.updateScheduleNotification(saved);
-        return saved;
-    }
+    // 일정 삭제 — 관련 알림 선삭제 + 트랜잭션
+    void delete(Long schId);
 
-    // 일정 삭제 — 관련 알림 먼저 삭제 후 일정 삭제 (FK 제약 회피)
-    @Transactional
-    public void delete(Long schId) {
-        notiInfoRepository.deleteBySchInfoSchId(schId);
-        schInfoRepository.deleteById(schId);
-    }
+    // 사용자의 일정 목록 조회 (DTO 반환)
+    List<SchInfoDto> getByUserId(Long userId);
 
-    // 사용자의 일정 목록 조회
-    public List<SchInfo> getByUserId(Long userId) {
-        return schInfoRepository.findByUserInfoUserId(userId);
-    }
+    // 반복 업무 목록 조회 (DTO 반환)
+    List<SchInfoDto> getRecurringByUserId(Long userId);
 
-    // 반복 업무 목록 조회
-    public List<SchInfo> getRecurringByUserId(Long userId) {
-        return schInfoRepository.findByUserInfoUserIdAndRecurringIsNotNull(userId);
-    }
+    // 일정 상세 조회 (DTO 반환)
+    SchInfoDto getById(Long schId);
 
-    // 일정 상세 조회
-    public SchInfo getById(Long schId) {
-        return schInfoRepository.findById(schId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
-    }
+    // 시간 충돌 검사 (DTO 반환)
+    List<SchInfoDto> checkConflict(Long userId, LocalDateTime newStart, LocalDateTime newEnd, Long excludeSchId);
 
-    // 시간 충돌 검사 — 등록/수정 전 호출
-    // excludeSchId: 수정 시 자기 자신 제외 (등록 시 null 전달)
-    public List<SchInfo> checkConflict(Long userId, LocalDateTime newStart, LocalDateTime newEnd, Long excludeSchId) {
-        if (newStart == null || newEnd == null) return List.of();
-        if (!newEnd.isAfter(newStart)) return List.of();
-        List<SchInfo> conflicts = schInfoRepository.findConflicts(userId, newStart, newEnd);
-        if (excludeSchId != null) {
-            conflicts = conflicts.stream()
-                    .filter(s -> !excludeSchId.equals(s.getSchId()))
-                    .toList();
-        }
-        return conflicts;
-    }
+    // 사용자 일정의 통계 조회 (우선순위/상태별 카운트 + 완료율)
+    ScheduleStatsDto getStatsByUserId(Long userId);
 }

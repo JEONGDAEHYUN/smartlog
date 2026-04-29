@@ -1,10 +1,11 @@
 package com.smartlog.sync.controller;
 
+import com.smartlog.sync.dto.SchInfoDto;
 import com.smartlog.sync.dto.ScheduleDto;
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.entity.mongodb.Worklog;
-import com.smartlog.sync.repository.mariadb.UserInfoRepository;
+import com.smartlog.sync.dto.WorklogDto;
+import com.smartlog.sync.repository.entity.UserInfo;
 import com.smartlog.sync.service.ScheduleService;
+import com.smartlog.sync.service.UserService;
 import com.smartlog.sync.service.WorklogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,18 +25,17 @@ public class WorklogController {
 
     private final WorklogService worklogService;
     private final ScheduleService scheduleService;
-    private final UserInfoRepository userInfoRepository;
+    private final UserService userService;
 
     // 원본 메모 작성 페이지 (오늘 일정 함께 표시)
     @GetMapping("/write")
     public String writePage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        UserInfo user = userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user != null) {
             java.time.LocalDate today = java.time.LocalDate.now();
-            java.util.List<com.smartlog.sync.entity.mariadb.SchInfo> todaySchedules =
-                    scheduleService.getByUserId(user.getUserId()).stream()
-                            .filter(s -> s.getStartDt().toLocalDate().equals(today))
-                            .toList();
+            List<SchInfoDto> todaySchedules = scheduleService.getByUserId(user.getUserId()).stream()
+                    .filter(s -> s.getStartDt().toLocalDate().equals(today))
+                    .toList();
             model.addAttribute("todaySchedules", todaySchedules);
         }
         return "worklog/write";
@@ -47,15 +47,13 @@ public class WorklogController {
                         @RequestParam String rawContent,
                         @RequestParam(defaultValue = "false") boolean aiRefine,
                         RedirectAttributes redirectAttributes) {
-        UserInfo user = userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user == null) return "redirect:/login";
 
-        Worklog worklog;
+        com.smartlog.sync.repository.entity.Worklog worklog;
         if (aiRefine) {
-            // 저장 + 즉시 AI 정제
             worklog = worklogService.saveAndRefine(user.getUserId(), rawContent);
         } else {
-            // 임시저장 (RAW 상태)
             worklog = worklogService.saveRaw(user.getUserId(), rawContent);
         }
 
@@ -67,7 +65,7 @@ public class WorklogController {
     // 업무일지 상세 (원본 vs 정제 비교)
     @GetMapping("/detail/{logId}")
     public String detail(@PathVariable String logId, Model model) {
-        Worklog worklog = worklogService.getByLogId(logId);
+        WorklogDto worklog = worklogService.getByLogId(logId);
         model.addAttribute("worklog", worklog);
         return "worklog/detail";
     }
@@ -82,10 +80,10 @@ public class WorklogController {
     // 업무 아카이브 (목록)
     @GetMapping("/archive")
     public String archive(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        UserInfo user = userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user == null) return "redirect:/login";
 
-        List<Worklog> worklogs = worklogService.getByUserId(user.getUserId());
+        List<WorklogDto> worklogs = worklogService.getByUserId(user.getUserId());
         model.addAttribute("worklogs", worklogs);
         return "worklog/archive";
     }
@@ -93,7 +91,7 @@ public class WorklogController {
     // 일지 확정 페이지
     @GetMapping("/confirm/{logId}")
     public String confirmPage(@PathVariable String logId, Model model) {
-        Worklog worklog = worklogService.getByLogId(logId);
+        WorklogDto worklog = worklogService.getByLogId(logId);
         model.addAttribute("worklog", worklog);
 
         // 기본값: "M월 d일 업무일지"
@@ -116,7 +114,7 @@ public class WorklogController {
     public String confirm(@PathVariable String logId,
                           @AuthenticationPrincipal UserDetails userDetails,
                           @ModelAttribute ScheduleDto scheduleDto) {
-        UserInfo user = userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user == null) return "redirect:/login";
 
         scheduleDto.setLogId(logId);

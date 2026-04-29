@@ -1,4 +1,4 @@
-package com.smartlog.sync.entity.mongodb;
+package com.smartlog.sync.repository.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;

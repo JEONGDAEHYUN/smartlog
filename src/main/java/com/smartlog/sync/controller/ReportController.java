@@ -1,11 +1,11 @@
 package com.smartlog.sync.controller;
 
-import com.smartlog.sync.entity.mariadb.ReportInfo;
-import com.smartlog.sync.entity.mariadb.SchInfo;
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.repository.mariadb.SchInfoRepository;
-import com.smartlog.sync.repository.mariadb.UserInfoRepository;
+import com.smartlog.sync.dto.ReportInfoDto;
+import com.smartlog.sync.dto.ScheduleStatsDto;
+import com.smartlog.sync.repository.entity.UserInfo;
 import com.smartlog.sync.service.ReportService;
+import com.smartlog.sync.service.ScheduleService;
+import com.smartlog.sync.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,8 +23,8 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
-    private final UserInfoRepository userInfoRepository;
-    private final SchInfoRepository schInfoRepository;
+    private final ScheduleService scheduleService;
+    private final UserService userService;
 
     // 보고서 생성 페이지
     @GetMapping("/create")
@@ -44,37 +44,28 @@ public class ReportController {
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
 
-        ReportInfo report = reportService.generate(user, reportType, start, end);
+        ReportInfoDto report = reportService.generate(user, reportType, start, end);
         return "redirect:/report/detail/" + report.getRepId();
     }
 
     // 보고서 상세 (통계 포함)
     @GetMapping("/detail/{repId}")
     public String detail(@PathVariable Long repId, @AuthenticationPrincipal UserDetails userDetails, Model model) {
-        ReportInfo report = reportService.getById(repId);
+        ReportInfoDto report = reportService.getById(repId);
         model.addAttribute("report", report);
 
-        // 통계 데이터
+        // 통계 데이터 (ScheduleService에서 일원화된 통계 계산)
         UserInfo user = getUser(userDetails);
         if (user != null) {
-            List<SchInfo> schedules = schInfoRepository.findByUserInfoUserId(user.getUserId());
-            long total = schedules.size();
-            long high = schedules.stream().filter(s -> "HIGH".equals(s.getPriority())).count();
-            long mid = schedules.stream().filter(s -> "MID".equals(s.getPriority())).count();
-            long low = schedules.stream().filter(s -> "LOW".equals(s.getPriority())).count();
-            long done = schedules.stream().filter(s -> "DONE".equals(s.getStatus())).count();
-            long inProgress = schedules.stream().filter(s -> "IN_PROGRESS".equals(s.getStatus())).count();
-            long planned = schedules.stream().filter(s -> "PLANNED".equals(s.getStatus())).count();
-            double doneRate = total > 0 ? (double) done / total * 100 : 0;
-
-            model.addAttribute("totalSch", total);
-            model.addAttribute("highCount", high);
-            model.addAttribute("midCount", mid);
-            model.addAttribute("lowCount", low);
-            model.addAttribute("doneCount", done);
-            model.addAttribute("inProgressCount", inProgress);
-            model.addAttribute("plannedCount", planned);
-            model.addAttribute("doneRate", String.format("%.1f", doneRate));
+            ScheduleStatsDto stats = scheduleService.getStatsByUserId(user.getUserId());
+            model.addAttribute("totalSch", stats.getTotalCount());
+            model.addAttribute("highCount", stats.getHighCount());
+            model.addAttribute("midCount", stats.getMidCount());
+            model.addAttribute("lowCount", stats.getLowCount());
+            model.addAttribute("doneCount", stats.getDoneCount());
+            model.addAttribute("inProgressCount", stats.getInProgressCount());
+            model.addAttribute("plannedCount", stats.getPlannedCount());
+            model.addAttribute("doneRate", stats.getDoneRate());
         }
         return "report/detail";
     }
@@ -85,7 +76,7 @@ public class ReportController {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
-        List<ReportInfo> reports = reportService.getByUserId(user.getUserId());
+        List<ReportInfoDto> reports = reportService.getByUserId(user.getUserId());
         model.addAttribute("reports", reports);
         return "report/archive";
     }
@@ -98,6 +89,6 @@ public class ReportController {
     }
 
     private UserInfo getUser(UserDetails userDetails) {
-        return userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        return userService.getEntityByEmail(userDetails.getUsername());
     }
 }

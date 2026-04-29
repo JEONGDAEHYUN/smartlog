@@ -1,4 +1,4 @@
-package com.smartlog.sync.entity.mariadb;
+package com.smartlog.sync.repository.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

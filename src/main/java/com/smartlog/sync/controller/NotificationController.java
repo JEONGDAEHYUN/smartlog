@@ -1,9 +1,10 @@
 package com.smartlog.sync.controller;
 
-import com.smartlog.sync.entity.mariadb.NotiInfo;
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.repository.mariadb.NotiInfoRepository;
-import com.smartlog.sync.repository.mariadb.UserInfoRepository;
+import com.smartlog.sync.dto.NotiInfoDto;
+import com.smartlog.sync.repository.entity.NotiInfo;
+import com.smartlog.sync.repository.NotiInfoRepository;
+import com.smartlog.sync.repository.entity.UserInfo;
+import com.smartlog.sync.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,7 @@ import java.util.*;
 public class NotificationController {
 
     private final NotiInfoRepository notiInfoRepository;
-    private final UserInfoRepository userInfoRepository;
+    private final UserService userService;
 
     // 알림 목록
     @GetMapping
@@ -41,10 +42,13 @@ public class NotificationController {
         // 같은 일정(SCH_ID)의 알림은 최신 1개만 표시
         notifications = filterLatestPerSchedule(notifications);
 
-        long totalCount = notifications.size();
-        long unreadCount = notifications.stream().filter(n -> "N".equals(n.getIsRead())).count();
+        // Entity → DTO 변환 (View로는 DTO만 전달)
+        List<NotiInfoDto> notificationDtos = NotiInfoDto.fromList(notifications);
 
-        model.addAttribute("notifications", notifications);
+        long totalCount = notificationDtos.size();
+        long unreadCount = notificationDtos.stream().filter(n -> "N".equals(n.getIsRead())).count();
+
+        model.addAttribute("notifications", notificationDtos);
         model.addAttribute("totalCount", totalCount);
         model.addAttribute("unreadCount", unreadCount);
         model.addAttribute("filter", filter);
@@ -81,7 +85,7 @@ public class NotificationController {
         return "redirect:/notifications";
     }
 
-    // 같은 일정(SCH_ID)에 대해 최신 알림 1개만 유지
+    // 같은 일정(SCH_ID)에 대해 최신 알림 1개만 유지 (Entity 단계에서 필터링)
     private List<NotiInfo> filterLatestPerSchedule(List<NotiInfo> notifications) {
         Map<Long, NotiInfo> latestMap = new LinkedHashMap<>();
         for (NotiInfo noti : notifications) {
@@ -100,6 +104,6 @@ public class NotificationController {
     }
 
     private UserInfo getUser(UserDetails userDetails) {
-        return userInfoRepository.findByUserEmail(userDetails.getUsername()).orElse(null);
+        return userService.getEntityByEmail(userDetails.getUsername());
     }
 }

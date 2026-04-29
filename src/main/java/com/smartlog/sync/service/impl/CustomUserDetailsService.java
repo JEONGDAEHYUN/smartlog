@@ -1,7 +1,7 @@
-package com.smartlog.sync.service;
+package com.smartlog.sync.service.impl;
 
-import com.smartlog.sync.entity.mariadb.UserInfo;
-import com.smartlog.sync.repository.mariadb.UserInfoRepository;
+import com.smartlog.sync.repository.entity.UserInfo;
+import com.smartlog.sync.repository.UserInfoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 
 // Spring Security 로그인 처리 — DB에서 회원 조회
+// Spring의 UserDetailsService 인터페이스를 구현하는 구현체
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

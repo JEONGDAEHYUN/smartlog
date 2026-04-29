@@ -1,6 +1,6 @@
-package com.smartlog.sync.repository.mongodb;
+package com.smartlog.sync.repository;
 
-import com.smartlog.sync.entity.mongodb.Worklog;
+import com.smartlog.sync.repository.entity.Worklog;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,22 +1,15 @@
 package com.smartlog.sync.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
 
-// Gemini API 설정
+// Gemini API 설정 (api-key, model 프로퍼티 바인딩)
 @Configuration
 @ConfigurationProperties(prefix = "gemini")
 public class GeminiConfig {
 
     private String apiKey;
     private String model;
-
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
 
     public String getApiKey() { return apiKey; }
     public void setApiKey(String apiKey) { this.apiKey = apiKey; }

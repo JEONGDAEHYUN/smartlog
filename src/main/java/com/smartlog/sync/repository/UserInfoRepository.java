@@ -1,6 +1,6 @@
-package com.smartlog.sync.repository.mariadb;
+package com.smartlog.sync.repository;
 
-import com.smartlog.sync.entity.mariadb.UserInfo;
+import com.smartlog.sync.repository.entity.UserInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
