@@ -68,16 +68,17 @@ public class ScheduleController {
     public String editPage(@PathVariable Long schId,
                            @RequestParam(required = false) String from, Model model) {
         SchInfoDto sch = scheduleService.getById(schId);
-        ScheduleDto dto = new ScheduleDto();
-        dto.setSchId(sch.getSchId());
-        dto.setSchTitle(sch.getSchTitle());
-        dto.setStartDt(sch.getStartDt());
-        dto.setEndDt(sch.getEndDt());
-        dto.setPriority(sch.getPriority());
-        dto.setStatus(sch.getStatus());
-        dto.setLogId(sch.getLogId());
-        dto.setRecurring(sch.getRecurring());
-        dto.setSchMemo(sch.getSchMemo());
+        ScheduleDto dto = ScheduleDto.builder()
+                .schId(sch.getSchId())
+                .schTitle(sch.getSchTitle())
+                .startDt(sch.getStartDt())
+                .endDt(sch.getEndDt())
+                .priority(sch.getPriority())
+                .status(sch.getStatus())
+                .logId(sch.getLogId())
+                .recurring(sch.getRecurring())
+                .schMemo(sch.getSchMemo())
+                .build();
         model.addAttribute("scheduleDto", dto);
         model.addAttribute("from", from);
         return "schedule/form";

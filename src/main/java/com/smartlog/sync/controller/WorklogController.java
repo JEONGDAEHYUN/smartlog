@@ -94,16 +94,20 @@ public class WorklogController {
         WorklogDto worklog = worklogService.getByLogId(logId);
         model.addAttribute("worklog", worklog);
 
-        // 기본값: "M월 d일 업무일지"
-        ScheduleDto dto = new ScheduleDto();
-        dto.setLogId(logId);
+        // 기본 일정 제목: "M월 d일(요일) 업무일지"
         java.time.LocalDate today = java.time.LocalDate.now();
         String[] dayNames = {"월", "화", "수", "목", "금", "토", "일"};
         String dayOfWeek = dayNames[today.getDayOfWeek().getValue() - 1];
-        dto.setSchTitle(today.getMonthValue() + "월 " + today.getDayOfMonth() + "일(" + dayOfWeek + ") 업무일지");
-        dto.setStartDt(java.time.LocalDateTime.now());
-        dto.setPriority("MID");
-        dto.setStatus("DONE");
+        String defaultTitle = today.getMonthValue() + "월 " + today.getDayOfMonth() + "일(" + dayOfWeek + ") 업무일지";
+
+        // 빌더 패턴으로 일관된 객체 생성
+        ScheduleDto dto = ScheduleDto.builder()
+                .logId(logId)
+                .schTitle(defaultTitle)
+                .startDt(java.time.LocalDateTime.now())
+                .priority("MID")
+                .status("DONE")
+                .build();
         model.addAttribute("scheduleDto", dto);
 
         return "worklog/confirm";

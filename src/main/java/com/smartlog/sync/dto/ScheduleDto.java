@@ -2,7 +2,10 @@ package com.smartlog.sync.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -10,6 +13,9 @@ import java.time.LocalDateTime;
 // 일정 등록/수정 요청 DTO
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScheduleDto {
 
     private Long schId; // 수정 시 사용

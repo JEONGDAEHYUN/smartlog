@@ -11,7 +11,8 @@ import java.util.List;
 
 // 일정정보 Repository (MariaDB)
 @Repository
-public interface SchInfoRepository extends JpaRepository<SchInfo, Long> {
+public interface
+SchInfoRepository extends JpaRepository<SchInfo, Long> {
 
     // 특정 사용자의 일정 목록 조회
     List<SchInfo> findByUserInfoUserId(Long userId);
