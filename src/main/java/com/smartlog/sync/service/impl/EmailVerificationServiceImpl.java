@@ -9,7 +9,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 // 이메일 인증 서비스 구현체 — HttpSession TTL 방식 + Gmail SMTP 발송
 @Service
@@ -19,8 +19,10 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
     private static final int CODE_LENGTH = 6;
     private static final int TTL_SECONDS = 600; // 10분
+    private static final int MAX_VERIFY_ATTEMPTS = 5; // 무차별 대입 방지
 
     private final JavaMailSender mailSender;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -30,6 +32,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         String code = generateRandomCode();
         session.setAttribute("VERIFY_CODE_" + email, code);
         session.setAttribute("VERIFY_TIME_" + email, System.currentTimeMillis());
+        session.removeAttribute("VERIFY_ATTEMPTS_" + email); // 재발급 시 시도 횟수 초기화
         session.setMaxInactiveInterval(TTL_SECONDS);
 
         sendVerificationEmail(email, code);
@@ -68,17 +71,27 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             return false;
         }
 
+        // TTL 만료 검사
         long elapsed = System.currentTimeMillis() - savedTime;
         if (elapsed > TTL_SECONDS * 1000L) {
-            session.removeAttribute("VERIFY_CODE_" + email);
-            session.removeAttribute("VERIFY_TIME_" + email);
+            clearCodeData(session, email);
+            return false;
+        }
+
+        // 시도 횟수 증가 + 한도 검사 (무차별 대입 방지)
+        Integer attempts = (Integer) session.getAttribute("VERIFY_ATTEMPTS_" + email);
+        attempts = (attempts == null) ? 1 : attempts + 1;
+        session.setAttribute("VERIFY_ATTEMPTS_" + email, attempts);
+
+        if (attempts > MAX_VERIFY_ATTEMPTS) {
+            log.warn("인증 코드 시도 횟수 초과 — 코드 무효화: {}", email);
+            clearCodeData(session, email);
             return false;
         }
 
         if (savedCode.equals(inputCode)) {
             session.setAttribute("VERIFIED_" + email, true);
-            session.removeAttribute("VERIFY_CODE_" + email);
-            session.removeAttribute("VERIFY_TIME_" + email);
+            clearCodeData(session, email);
             return true;
         }
 
@@ -96,12 +109,18 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         session.removeAttribute("VERIFIED_" + email);
     }
 
-    // 6자리 랜덤 숫자 코드 생성
+    // 인증 코드 관련 세션 데이터 일괄 정리
+    private void clearCodeData(HttpSession session, String email) {
+        session.removeAttribute("VERIFY_CODE_" + email);
+        session.removeAttribute("VERIFY_TIME_" + email);
+        session.removeAttribute("VERIFY_ATTEMPTS_" + email);
+    }
+
+    // 6자리 랜덤 숫자 코드 생성 (SecureRandom — 예측 불가)
     private String generateRandomCode() {
-        Random random = new Random();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < CODE_LENGTH; i++) {
-            sb.append(random.nextInt(10));
+            sb.append(secureRandom.nextInt(10));
         }
         return sb.toString();
     }

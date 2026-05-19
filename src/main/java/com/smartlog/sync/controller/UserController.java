@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 // 사용자 인증/인가 통합 Controller
 // (회원가입/로그인/이메일인증/아이디찾기/비번찾기/마이페이지/프로필/비번변경)
@@ -25,6 +29,7 @@ public class UserController {
 
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
+    private final SessionRegistry sessionRegistry;
 
     // ═══════════════════════════════════════════════════════════
     // 메인 / 로그인 페이지
@@ -149,18 +154,25 @@ public class UserController {
     }
 
     // Step 1: 이메일 입력 → 인증코드 메일 발송
+    // User Enumeration 방지 — 가입 여부와 무관하게 동일한 화면으로 진행.
+    // 실제 메일은 등록된 사용자에게만 발송되며, 미등록 이메일로 시도해도 동일한 응답을 받음.
     @PostMapping("/find-pw/send")
     public String findPwSendCode(@Valid @ModelAttribute("emailRequestDto") EmailRequestDto dto,
                                  BindingResult bindingResult, Model model, HttpSession session) {
         if (bindingResult.hasErrors()) {
             return "auth/find-pw";
         }
-        try {
-            emailVerificationService.generateCode(session, dto.getUserEmail());
-        } catch (IllegalStateException e) {
-            model.addAttribute("error", e.getMessage());
-            return "auth/find-pw";
+
+        if (userService.isEmailDuplicate(dto.getUserEmail())) {
+            try {
+                emailVerificationService.generateCode(session, dto.getUserEmail());
+            } catch (IllegalStateException e) {
+                // SMTP 실패는 사용자에게 노출 (등록 여부와 무관한 일반 오류)
+                model.addAttribute("error", e.getMessage());
+                return "auth/find-pw";
+            }
         }
+        // 등록 여부와 무관하게 동일한 다음 화면으로 진행
         model.addAttribute("userEmail", dto.getUserEmail());
         model.addAttribute("step", 2);
         return "auth/find-pw";
@@ -205,6 +217,7 @@ public class UserController {
         try {
             userService.resetPassword(dto.getUserEmail(), dto.getNewPassword());
             emailVerificationService.clearVerification(session, dto.getUserEmail());
+            expireUserSessions(dto.getUserEmail()); // 비밀번호 변경 → 모든 활성 세션 강제 만료
             return "redirect:/login?resetPw=true";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -256,11 +269,29 @@ public class UserController {
         }
         try {
             userService.changePassword(userDetails.getUsername(), dto.getCurrentPassword(), dto.getNewPassword());
+            expireUserSessions(userDetails.getUsername()); // 다른 디바이스 세션까지 강제 만료
             return "redirect:/login?pwChanged=true";
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("pwError", e.getMessage());
             redirectAttributes.addFlashAttribute("activeTab", "password");
             return "redirect:/mypage";
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 내부 유틸 — 사용자별 세션 강제 만료
+    // ═══════════════════════════════════════════════════════════
+
+    // 비밀번호 변경/재설정 시 호출 — 해당 사용자의 모든 활성 세션을 즉시 만료시켜
+    // 탈취된 세션이나 다른 디바이스에 남은 세션이 그대로 유지되지 않도록 함
+    private void expireUserSessions(String username) {
+        List<Object> principals = sessionRegistry.getAllPrincipals();
+        for (Object principal : principals) {
+            if (!(principal instanceof UserDetails)) continue;
+            if (!((UserDetails) principal).getUsername().equals(username)) continue;
+            for (SessionInformation session : sessionRegistry.getAllSessions(principal, false)) {
+                session.expireNow();
+            }
         }
     }
 }

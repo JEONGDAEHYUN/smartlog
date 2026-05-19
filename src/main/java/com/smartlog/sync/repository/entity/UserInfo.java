@@ -37,9 +37,17 @@ public class UserInfo {
     @Column(name = "REG_DT", nullable = false, updatable = false)
     private LocalDateTime regDt; // 등록일
 
+    @Builder.Default
+    @Column(name = "FAIL_COUNT", nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
+    private Integer failCount = 0; // 로그인 연속 실패 횟수 (기존 레코드는 0으로 자동 보정)
+
+    @Column(name = "LOCKED_UNTIL")
+    private LocalDateTime lockedUntil; // 계정 잠금 해제 시각 (null이면 잠금 아님)
+
     // Entity 저장 시 등록일 자동 설정
     @PrePersist
     protected void onCreate() {
         this.regDt = LocalDateTime.now();
+        if (this.failCount == null) this.failCount = 0;
     }
 }

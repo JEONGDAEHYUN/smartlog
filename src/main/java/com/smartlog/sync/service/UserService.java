@@ -30,4 +30,10 @@ public interface UserService {
 
     // 이메일로 사용자 엔티티 조회 (내부 비즈니스 로직용)
     UserInfo getEntityByEmail(String userEmail);
+
+    // 로그인 실패 횟수 증가 — 임계값 도달 시 계정 잠금
+    void recordLoginFailure(String userEmail);
+
+    // 로그인 실패 횟수 초기화 — 로그인 성공 시 호출
+    void resetLoginFailures(String userEmail);
 }

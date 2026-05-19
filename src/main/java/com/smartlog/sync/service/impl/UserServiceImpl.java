@@ -9,10 +9,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 // 회원 관련 비즈니스 로직 구현체
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private static final int MAX_LOGIN_FAIL = 5;       // 잠금 임계값
+    private static final int LOCK_MINUTES = 30;        // 잠금 유지 시간(분)
 
     private final UserInfoRepository userInfoRepository;
     private final PasswordEncoder passwordEncoder;
@@ -81,6 +86,31 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserInfo getEntityByEmail(String userEmail) {
         return userInfoRepository.findByUserEmail(userEmail).orElse(null);
+    }
+
+    @Override
+    public void recordLoginFailure(String userEmail) {
+        // 존재하지 않는 이메일은 조용히 무시 (User Enumeration 방지)
+        UserInfo user = userInfoRepository.findByUserEmail(userEmail).orElse(null);
+        if (user == null) return;
+
+        int current = (user.getFailCount() == null) ? 0 : user.getFailCount();
+        int next = current + 1;
+        user.setFailCount(next);
+
+        if (next >= MAX_LOGIN_FAIL) {
+            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_MINUTES));
+        }
+        userInfoRepository.save(user);
+    }
+
+    @Override
+    public void resetLoginFailures(String userEmail) {
+        UserInfo user = userInfoRepository.findByUserEmail(userEmail).orElse(null);
+        if (user == null) return;
+        user.setFailCount(0);
+        user.setLockedUntil(null);
+        userInfoRepository.save(user);
     }
 
     // 이메일 마스킹 (ho**@smartlog.kr)

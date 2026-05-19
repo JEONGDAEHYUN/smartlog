@@ -1,20 +1,23 @@
 package com.smartlog.sync.config;
 
+import com.smartlog.sync.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-// 로그인 성공 핸들러 — 실패 횟수 초기화
+// 로그인 성공 핸들러 — 실패 카운터 / 잠금 상태 초기화 (DB)
 @Component
 public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    public LoginSuccessHandler() {
+    private final UserService userService;
+
+    public LoginSuccessHandler(UserService userService) {
+        this.userService = userService;
         setDefaultTargetUrl("/dashboard");
         setAlwaysUseDefaultTargetUrl(true);
     }
@@ -22,12 +25,8 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        // 로그인 성공 시 실패 횟수 초기화
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            String email = authentication.getName();
-            session.removeAttribute("LOGIN_FAIL_" + email);
-        }
+        // DB의 failCount, lockedUntil 초기화
+        userService.resetLoginFailures(authentication.getName());
         super.onAuthenticationSuccess(request, response, authentication);
     }
 }

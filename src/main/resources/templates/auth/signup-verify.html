@@ -61,7 +61,7 @@
 
                 <!-- 인증코드 입력 폼 -->
                 <form th:action="@{/signup/verify}" method="post">
-                    <input type="hidden" name="email" th:value="${email}">
+                    <input type="hidden" name="userEmail" th:value="${email}">
                     <div class="d-flex gap-2 justify-content-center mb-3" style="max-width:300px; margin:0 auto;">
                         <input type="text" class="form-control text-center" name="inputCode"
                                placeholder="인증 코드 6자리" maxlength="6"
