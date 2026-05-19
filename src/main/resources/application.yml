@@ -23,7 +23,7 @@ spring:
       hibernate:
         format_sql: true       # SQL 포맷팅 (가독성 향상)
 
-  # MongoDB 연결 설정
+  # MongoDB 연결 설정 (Spring Boot 4.0부터 spring.mongodb.* 로 이동, spring.data.mongodb.* 는 Spring Data 전용)
   mongodb:
     uri: ${MONGODB_URI}
 
@@ -57,6 +57,14 @@ gemini:
 weather:
   api-key: ${WEATHER_API_KEY:}
 
-# 서버 포트
+# 서버 포트 + 세션 쿠키 보안 설정
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 30m              # 30분 미사용 시 세션 자동 만료
+      cookie:
+        name: SYNC_SESSION
+        http-only: true         # JS에서 쿠키 접근 차단 (XSS 방어)
+        same-site: lax          # CSRF 방어 — 외부 사이트 요청 시 쿠키 미전송
+        secure: ${SESSION_COOKIE_SECURE:false}  # 운영(HTTPS) 환경에서 true로 설정
