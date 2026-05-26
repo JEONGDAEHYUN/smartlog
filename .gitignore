@@ -44,3 +44,9 @@ application-local.yml
 CLAUDE.md
 docs/
 notion/
+
+### Claude Code 작업 디렉터리 ###
+.claude/
+
+### 로컬 실행 로그 ###
+*.log
