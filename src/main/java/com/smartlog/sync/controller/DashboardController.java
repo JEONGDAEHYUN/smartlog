@@ -49,8 +49,8 @@ public class DashboardController {
         model.addAttribute("recentWorklogs", recentWorklogs);
 
         // KPI 데이터
-        long doneCount = todaySchedules.stream().filter(s -> "DONE".equals(s.getStatus())).count();
-        long inProgressCount = todaySchedules.stream().filter(s -> "IN_PROGRESS".equals(s.getStatus())).count();
+        long doneCount = todaySchedules.stream().filter(s -> "DONE".equals(s.status())).count();
+        long inProgressCount = todaySchedules.stream().filter(s -> "IN_PROGRESS".equals(s.status())).count();
         long unreadNotiCount = notiInfoRepository.findByUserInfoUserIdAndIsRead(userId, "N").size();
         long worklogCount = recentWorklogs.size();
 

@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 // 업무일지 Document (MongoDB)
 @Document(collection = "WORKLOG")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,4 +35,23 @@ public class Worklog {
 
     @Field("UPDATED_AT")
     private LocalDateTime updatedAt; // 수정 일시
+
+    // 정제 시작 — 상태 PROCESSING 전환
+    public void markProcessing() {
+        this.status = "PROCESSING";
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 정제 성공 — 결과 반영 + 상태 SUCCESS
+    public void markRefined(String refinedContent) {
+        this.refinedContent = refinedContent;
+        this.status = "SUCCESS";
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 정제 실패 — 상태 FAILED (결과는 그대로 유지)
+    public void markFailed() {
+        this.status = "FAILED";
+        this.updatedAt = LocalDateTime.now();
+    }
 }

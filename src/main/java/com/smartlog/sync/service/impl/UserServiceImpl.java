@@ -24,14 +24,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void signup(SignupDto dto) {
-        if (userInfoRepository.existsByUserEmail(dto.getUserEmail())) {
+        if (userInfoRepository.existsByUserEmail(dto.userEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다");
         }
         UserInfo userInfo = UserInfo.builder()
-                .userEmail(dto.getUserEmail())
-                .userPwd(passwordEncoder.encode(dto.getUserPwd()))
-                .userName(dto.getUserName())
-                .orgName(dto.getOrgName())
+                .userEmail(dto.userEmail())
+                .userPwd(passwordEncoder.encode(dto.userPwd()))
+                .userName(dto.userName())
+                .orgName(dto.orgName())
                 .userRole("ROLE_USER")
                 .build();
         userInfoRepository.save(userInfo);
@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
     public void resetPassword(String userEmail, String newPassword) {
         UserInfo user = userInfoRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다"));
-        user.setUserPwd(passwordEncoder.encode(newPassword));
+        user.changePassword(passwordEncoder.encode(newPassword));
         userInfoRepository.save(user);
     }
 
@@ -61,8 +61,7 @@ public class UserServiceImpl implements UserService {
     public void updateProfile(String userEmail, String userName, String orgName) {
         UserInfo user = userInfoRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다"));
-        user.setUserName(userName);
-        user.setOrgName(orgName);
+        user.updateProfile(userName, orgName);
         userInfoRepository.save(user);
     }
 
@@ -73,7 +72,7 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(currentPassword, user.getUserPwd())) {
             throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다");
         }
-        user.setUserPwd(passwordEncoder.encode(newPassword));
+        user.changePassword(passwordEncoder.encode(newPassword));
         userInfoRepository.save(user);
     }
 
@@ -94,12 +93,9 @@ public class UserServiceImpl implements UserService {
         UserInfo user = userInfoRepository.findByUserEmail(userEmail).orElse(null);
         if (user == null) return;
 
-        int current = (user.getFailCount() == null) ? 0 : user.getFailCount();
-        int next = current + 1;
-        user.setFailCount(next);
-
-        if (next >= MAX_LOGIN_FAIL) {
-            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_MINUTES));
+        user.incrementFailCount();
+        if (user.getFailCount() >= MAX_LOGIN_FAIL) {
+            user.lockFor(LOCK_MINUTES);
         }
         userInfoRepository.save(user);
     }
@@ -108,8 +104,7 @@ public class UserServiceImpl implements UserService {
     public void resetLoginFailures(String userEmail) {
         UserInfo user = userInfoRepository.findByUserEmail(userEmail).orElse(null);
         if (user == null) return;
-        user.setFailCount(0);
-        user.setLockedUntil(null);
+        user.resetLoginFailures();
         userInfoRepository.save(user);
     }
 

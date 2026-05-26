@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "USER_INFO")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -49,5 +48,32 @@ public class UserInfo {
     protected void onCreate() {
         this.regDt = LocalDateTime.now();
         if (this.failCount == null) this.failCount = 0;
+    }
+
+    // 비밀번호 변경 — BCrypt 인코딩된 값만 받는다
+    public void changePassword(String encodedPassword) {
+        this.userPwd = encodedPassword;
+    }
+
+    // 프로필(이름·조직) 일괄 수정
+    public void updateProfile(String userName, String orgName) {
+        this.userName = userName;
+        this.orgName = orgName;
+    }
+
+    // 로그인 실패 카운트 1 증가
+    public void incrementFailCount() {
+        this.failCount = (this.failCount == null ? 0 : this.failCount) + 1;
+    }
+
+    // 계정을 minutes 분 동안 잠금
+    public void lockFor(int minutes) {
+        this.lockedUntil = LocalDateTime.now().plusMinutes(minutes);
+    }
+
+    // 로그인 성공 또는 잠금 해제 시 — 실패 카운트/잠금 해제
+    public void resetLoginFailures() {
+        this.failCount = 0;
+        this.lockedUntil = null;
     }
 }

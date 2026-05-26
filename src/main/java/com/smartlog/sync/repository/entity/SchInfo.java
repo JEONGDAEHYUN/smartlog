@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "SCH_INFO")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -54,5 +53,22 @@ public class SchInfo {
     @PrePersist
     protected void onCreate() {
         this.regDt = LocalDateTime.now();
+    }
+
+    // 일정 전체 필드 업데이트 — 수정 화면에서 호출
+    public void update(String schTitle, LocalDateTime startDt, LocalDateTime endDt,
+                       String priority, String status, String recurring, String schMemo) {
+        this.schTitle = schTitle;
+        this.startDt = startDt;
+        this.endDt = endDt;
+        this.priority = priority;
+        this.status = status;
+        this.recurring = recurring;
+        this.schMemo = schMemo;
+    }
+
+    // 반복 업무 자정 초기화 — 상태만 PLANNED 로 되돌림
+    public void resetToPlanned() {
+        this.status = "PLANNED";
     }
 }

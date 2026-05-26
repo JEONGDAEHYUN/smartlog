@@ -1,30 +1,23 @@
 package com.smartlog.sync.dto;
 
 import com.smartlog.sync.repository.entity.Worklog;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 업무일지 응답 DTO (MongoDB Worklog → 화면 전달용)
-@Data
+// 업무일지 응답 DTO (MongoDB Worklog → 화면 전달용, immutable record + Builder)
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class WorklogDto {
-
-    private String logId;
-    private Long userId;
-    private String rawContent;
-    private String refinedContent;
-    private String status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    // Entity → DTO 변환
+public record WorklogDto(
+        String logId,
+        Long userId,
+        String rawContent,
+        String refinedContent,
+        String status,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {
+    // Entity → DTO 변환 (Builder 패턴 일관 적용)
     public static WorklogDto from(Worklog entity) {
         if (entity == null) return null;
         return WorklogDto.builder()

@@ -63,8 +63,8 @@ public class WeatherServiceImpl implements WeatherService {
             List<WeatherApiResponseDto.Item> ncstItems = extractItems(ncstResponse);
             if (ncstItems != null) {
                 for (WeatherApiResponseDto.Item item : ncstItems) {
-                    String value = item.getObsrValue();
-                    switch (item.getCategory()) {
+                    String value = item.obsrValue();
+                    switch (item.category()) {
                         case "T1H" -> temp = String.format("%.0f", Double.parseDouble(value));
                         case "REH" -> humidity = (int) Double.parseDouble(value);
                         case "WSD" -> windSpeed = String.format("%.1f", Double.parseDouble(value));
@@ -89,8 +89,8 @@ public class WeatherServiceImpl implements WeatherService {
                 List<WeatherApiResponseDto.Item> fcstItems = extractItems(fcstResponse);
                 if (fcstItems != null) {
                     for (WeatherApiResponseDto.Item item : fcstItems) {
-                        if ("SKY".equals(item.getCategory())) {
-                            sky = (int) Double.parseDouble(item.getFcstValue());
+                        if ("SKY".equals(item.category())) {
+                            sky = (int) Double.parseDouble(item.fcstValue());
                             break;
                         }
                     }
@@ -116,12 +116,12 @@ public class WeatherServiceImpl implements WeatherService {
 
     // 응답 DTO에서 item 리스트 안전 추출
     private List<WeatherApiResponseDto.Item> extractItems(WeatherApiResponseDto response) {
-        if (response == null || response.getResponse() == null
-                || response.getResponse().getBody() == null
-                || response.getResponse().getBody().getItems() == null) {
+        if (response == null || response.response() == null
+                || response.response().body() == null
+                || response.response().body().items() == null) {
             return null;
         }
-        return response.getResponse().getBody().getItems().getItem();
+        return response.response().body().items().item();
     }
 
     // API 호출 실패 시 사용할 기본값

@@ -30,7 +30,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .toList();
 
         for (SchInfo sch : allRecurring) {
-            sch.setStatus("PLANNED");
+            sch.resetToPlanned();
             schInfoRepository.save(sch);
             createScheduleNotification(sch);
             log.info("[반복업무 초기화] schId={}, title={}", sch.getSchId(), sch.getSchTitle());
@@ -84,8 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         for (NotiInfo noti : pendingList) {
             if (noti.getNotiDt().isBefore(now) || noti.getNotiDt().isEqual(now)) {
-                noti.setIsSent("Y");
-                noti.setSentDt(now);
+                noti.markAsSent(now);
                 notiInfoRepository.save(noti);
                 log.info("[알림 발송] notiId={}, msg={}", noti.getNotiId(), noti.getNotiMsg());
 

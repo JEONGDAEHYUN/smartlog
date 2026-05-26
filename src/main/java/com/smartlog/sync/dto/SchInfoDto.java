@@ -1,33 +1,26 @@
 package com.smartlog.sync.dto;
 
 import com.smartlog.sync.repository.entity.SchInfo;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 일정 응답 DTO (UserInfo 관계 제외 — Lazy Loading + 순환참조 방지)
-@Data
+// 일정 응답 DTO (UserInfo 관계 제외 — Lazy Loading + 순환참조 방지, immutable record + Builder)
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class SchInfoDto {
-
-    private Long schId;
-    private String logId;
-    private String schTitle;
-    private LocalDateTime startDt;
-    private LocalDateTime endDt;
-    private String priority;
-    private String status;
-    private String recurring;
-    private String schMemo;
-    private LocalDateTime regDt;
-
-    // Entity → DTO 변환
+public record SchInfoDto(
+        Long schId,
+        String logId,
+        String schTitle,
+        LocalDateTime startDt,
+        LocalDateTime endDt,
+        String priority,
+        String status,
+        String recurring,
+        String schMemo,
+        LocalDateTime regDt
+) {
+    // Entity → DTO 변환 (Builder 패턴 일관 적용)
     public static SchInfoDto from(SchInfo entity) {
         if (entity == null) return null;
         return SchInfoDto.builder()
@@ -39,7 +32,6 @@ public class SchInfoDto {
                 .priority(entity.getPriority())
                 .status(entity.getStatus())
                 .recurring(entity.getRecurring())
-
                 .schMemo(entity.getSchMemo())
                 .regDt(entity.getRegDt())
                 .build();

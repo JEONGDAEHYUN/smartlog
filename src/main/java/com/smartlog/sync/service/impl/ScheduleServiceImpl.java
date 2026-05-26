@@ -27,17 +27,17 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public SchInfo create(UserInfo user, ScheduleDto dto) {
-        String recurring = (dto.getRecurring() != null && !dto.getRecurring().isBlank()) ? dto.getRecurring() : null;
+        String recurring = (dto.recurring() != null && !dto.recurring().isBlank()) ? dto.recurring() : null;
         SchInfo sch = SchInfo.builder()
                 .userInfo(user)
-                .schTitle(dto.getSchTitle())
-                .startDt(dto.getStartDt())
-                .endDt(dto.getEndDt())
-                .priority(dto.getPriority())
-                .status(dto.getStatus())
-                .logId(dto.getLogId())
+                .schTitle(dto.schTitle())
+                .startDt(dto.startDt())
+                .endDt(dto.endDt())
+                .priority(dto.priority())
+                .status(dto.status())
+                .logId(dto.logId())
                 .recurring(recurring)
-                .schMemo(dto.getSchMemo())
+                .schMemo(dto.schMemo())
                 .build();
         SchInfo saved = schInfoRepository.save(sch);
         notificationService.createScheduleNotification(saved);
@@ -48,14 +48,9 @@ public class ScheduleServiceImpl implements ScheduleService {
     public SchInfo update(Long schId, ScheduleDto dto) {
         SchInfo sch = schInfoRepository.findById(schId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
-        sch.setSchTitle(dto.getSchTitle());
-        sch.setStartDt(dto.getStartDt());
-        sch.setEndDt(dto.getEndDt());
-        sch.setPriority(dto.getPriority());
-        sch.setStatus(dto.getStatus());
-        String recurring = (dto.getRecurring() != null && !dto.getRecurring().isBlank()) ? dto.getRecurring() : null;
-        sch.setRecurring(recurring);
-        sch.setSchMemo(dto.getSchMemo());
+        String recurring = (dto.recurring() != null && !dto.recurring().isBlank()) ? dto.recurring() : null;
+        sch.update(dto.schTitle(), dto.startDt(), dto.endDt(),
+                dto.priority(), dto.status(), recurring, dto.schMemo());
         SchInfo saved = schInfoRepository.save(sch);
         notificationService.updateScheduleNotification(saved);
         return saved;

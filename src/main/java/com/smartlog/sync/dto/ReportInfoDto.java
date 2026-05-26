@@ -1,27 +1,20 @@
 package com.smartlog.sync.dto;
 
 import com.smartlog.sync.repository.entity.ReportInfo;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 보고서 응답 DTO (UserInfo 관계 제외)
-@Data
+// 보고서 응답 DTO (UserInfo 관계 제외, immutable record + Builder)
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReportInfoDto {
-
-    private Long repId;
-    private String repTitle;
-    private String repCont;
-    private LocalDateTime regDt;
-
-    // Entity → DTO 변환
+public record ReportInfoDto(
+        Long repId,
+        String repTitle,
+        String repCont,
+        LocalDateTime regDt
+) {
+    // Entity → DTO 변환 (Builder 패턴 일관 적용)
     public static ReportInfoDto from(ReportInfo entity) {
         if (entity == null) return null;
         return ReportInfoDto.builder()

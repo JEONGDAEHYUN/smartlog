@@ -1,31 +1,24 @@
 package com.smartlog.sync.dto;
 
 import com.smartlog.sync.repository.entity.NotiInfo;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 알림 응답 DTO (관계 객체 제외, schId만 포함)
-@Data
+// 알림 응답 DTO (관계 객체 제외, schId만 포함, immutable record + Builder)
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class NotiInfoDto {
-
-    private Long notiId;
-    private Long schId;            // 연결된 일정 ID (관계 객체 대신 ID만)
-    private String notiMsg;
-    private String isRead;
-    private String isSent;
-    private LocalDateTime sentDt;
-    private LocalDateTime notiDt;
-    private LocalDateTime regDt;
-
-    // Entity → DTO 변환
+public record NotiInfoDto(
+        Long notiId,
+        Long schId,              // 연결된 일정 ID (관계 객체 대신 ID만)
+        String notiMsg,
+        String isRead,
+        String isSent,
+        LocalDateTime sentDt,
+        LocalDateTime notiDt,
+        LocalDateTime regDt
+) {
+    // Entity → DTO 변환 (Builder 패턴 일관 적용)
     public static NotiInfoDto from(NotiInfo entity) {
         if (entity == null) return null;
         return NotiInfoDto.builder()

@@ -39,20 +39,17 @@ public class WorklogServiceImpl implements WorklogService {
         Worklog worklog = worklogRepository.findById(logId)
                 .orElseThrow(() -> new IllegalArgumentException("업무일지를 찾을 수 없습니다"));
 
-        worklog.setStatus("PROCESSING");
-        worklog.setUpdatedAt(LocalDateTime.now());
+        worklog.markProcessing();
         worklogRepository.save(worklog);
 
         try {
             String refined = geminiService.refineWorklog(worklog.getRawContent());
-            worklog.setRefinedContent(refined);
-            worklog.setStatus("SUCCESS");
+            worklog.markRefined(refined);
         } catch (Exception e) {
             log.error("AI 정제 실패 [logId={}]: {}", logId, e.getMessage());
-            worklog.setStatus("FAILED");
+            worklog.markFailed();
         }
 
-        worklog.setUpdatedAt(LocalDateTime.now());
         return worklogRepository.save(worklog);
     }
 

@@ -1,28 +1,21 @@
 package com.smartlog.sync.dto;
 
 import com.smartlog.sync.repository.entity.UserInfo;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// 회원정보 응답 DTO (비밀번호 제외 — 화면 노출 차단)
-@Data
+// 회원정보 응답 DTO (비밀번호 제외 — 화면 노출 차단, immutable record + Builder)
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UserInfoDto {
-
-    private Long userId;
-    private String userEmail;
-    private String userName;
-    private String orgName;
-    private String userRole;
-    private LocalDateTime regDt;
-
-    // Entity → DTO 변환 (정적 팩토리 메서드)
+public record UserInfoDto(
+        Long userId,
+        String userEmail,
+        String userName,
+        String orgName,
+        String userRole,
+        LocalDateTime regDt
+) {
+    // Entity → DTO 변환 (정적 팩토리 메서드, Builder 패턴 일관 적용)
     public static UserInfoDto from(UserInfo entity) {
         if (entity == null) return null;
         return UserInfoDto.builder()

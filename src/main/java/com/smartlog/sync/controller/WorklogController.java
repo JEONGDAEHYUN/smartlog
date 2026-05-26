@@ -34,7 +34,7 @@ public class WorklogController {
         if (user != null) {
             java.time.LocalDate today = java.time.LocalDate.now();
             List<SchInfoDto> todaySchedules = scheduleService.getByUserId(user.getUserId()).stream()
-                    .filter(s -> s.getStartDt().toLocalDate().equals(today))
+                    .filter(s -> s.startDt().toLocalDate().equals(today))
                     .toList();
             model.addAttribute("todaySchedules", todaySchedules);
         }
@@ -121,8 +121,8 @@ public class WorklogController {
         UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user == null) return "redirect:/login";
 
-        scheduleDto.setLogId(logId);
-        scheduleService.create(user, scheduleDto);
+        // record 는 immutable — logId 만 교체한 새 인스턴스 생성
+        scheduleService.create(user, scheduleDto.withLogId(logId));
         return "redirect:/schedule/list";
     }
 

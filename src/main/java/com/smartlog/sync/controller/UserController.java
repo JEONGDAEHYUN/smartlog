@@ -51,7 +51,7 @@ public class UserController {
 
     @GetMapping("/signup")
     public String signupPage(Model model) {
-        model.addAttribute("signupDto", new SignupDto());
+        model.addAttribute("signupDto", SignupDto.empty());
         return "auth/signup";
     }
 
@@ -64,7 +64,7 @@ public class UserController {
         }
 
         try {
-            if (userService.isEmailDuplicate(signupDto.getUserEmail())) {
+            if (userService.isEmailDuplicate(signupDto.userEmail())) {
                 model.addAttribute("error", "이미 사용 중인 이메일입니다");
                 return "auth/signup";
             }
@@ -76,13 +76,13 @@ public class UserController {
         session.setAttribute("SIGNUP_DTO", signupDto);
 
         try {
-            emailVerificationService.generateCode(session, signupDto.getUserEmail());
+            emailVerificationService.generateCode(session, signupDto.userEmail());
         } catch (IllegalStateException e) {
             model.addAttribute("error", e.getMessage());
             return "auth/signup";
         }
 
-        model.addAttribute("email", signupDto.getUserEmail());
+        model.addAttribute("email", signupDto.userEmail());
         model.addAttribute("step", 2);
         return "auth/signup-verify";
     }
@@ -92,12 +92,12 @@ public class UserController {
     public String signupStep2(@Valid @ModelAttribute("verifyCodeDto") VerifyCodeDto dto,
                               BindingResult bindingResult, Model model, HttpSession session) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("email", dto.getUserEmail());
+            model.addAttribute("email", dto.userEmail());
             model.addAttribute("step", 2);
             return "auth/signup-verify";
         }
 
-        if (emailVerificationService.verifyCode(session, dto.getUserEmail(), dto.getInputCode())) {
+        if (emailVerificationService.verifyCode(session, dto.userEmail(), dto.inputCode())) {
             SignupDto signupDto = (SignupDto) session.getAttribute("SIGNUP_DTO");
             if (signupDto == null) {
                 return "redirect:/signup";
@@ -105,14 +105,14 @@ public class UserController {
             try {
                 userService.signup(signupDto);
                 session.removeAttribute("SIGNUP_DTO");
-                emailVerificationService.clearVerification(session, dto.getUserEmail());
+                emailVerificationService.clearVerification(session, dto.userEmail());
                 return "redirect:/login?signup=true";
             } catch (IllegalArgumentException e) {
                 model.addAttribute("error", e.getMessage());
                 return "auth/signup";
             }
         } else {
-            model.addAttribute("email", dto.getUserEmail());
+            model.addAttribute("email", dto.userEmail());
             model.addAttribute("error", "인증 코드가 일치하지 않거나 만료되었습니다");
             model.addAttribute("step", 2);
             return "auth/signup-verify";
@@ -125,7 +125,7 @@ public class UserController {
 
     @GetMapping("/find-id")
     public String findIdPage(Model model) {
-        model.addAttribute("findIdDto", new FindIdDto());
+        model.addAttribute("findIdDto", FindIdDto.empty());
         return "auth/find-id";
     }
 
@@ -136,7 +136,7 @@ public class UserController {
             return "auth/find-id";
         }
         try {
-            String maskedEmail = userService.findEmail(dto.getUserName(), dto.getOrgName());
+            String maskedEmail = userService.findEmail(dto.userName(), dto.orgName());
             model.addAttribute("maskedEmail", maskedEmail);
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -163,9 +163,9 @@ public class UserController {
             return "auth/find-pw";
         }
 
-        if (userService.isEmailDuplicate(dto.getUserEmail())) {
+        if (userService.isEmailDuplicate(dto.userEmail())) {
             try {
-                emailVerificationService.generateCode(session, dto.getUserEmail());
+                emailVerificationService.generateCode(session, dto.userEmail());
             } catch (IllegalStateException e) {
                 // SMTP 실패는 사용자에게 노출 (등록 여부와 무관한 일반 오류)
                 model.addAttribute("error", e.getMessage());
@@ -173,7 +173,7 @@ public class UserController {
             }
         }
         // 등록 여부와 무관하게 동일한 다음 화면으로 진행
-        model.addAttribute("userEmail", dto.getUserEmail());
+        model.addAttribute("userEmail", dto.userEmail());
         model.addAttribute("step", 2);
         return "auth/find-pw";
     }
@@ -183,16 +183,16 @@ public class UserController {
     public String findPwVerify(@Valid @ModelAttribute("verifyCodeDto") VerifyCodeDto dto,
                                BindingResult bindingResult, Model model, HttpSession session) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("userEmail", dto.getUserEmail());
+            model.addAttribute("userEmail", dto.userEmail());
             model.addAttribute("step", 2);
             return "auth/find-pw";
         }
-        if (emailVerificationService.verifyCode(session, dto.getUserEmail(), dto.getInputCode())) {
-            model.addAttribute("userEmail", dto.getUserEmail());
+        if (emailVerificationService.verifyCode(session, dto.userEmail(), dto.inputCode())) {
+            model.addAttribute("userEmail", dto.userEmail());
             model.addAttribute("step", 3);
             return "auth/find-pw";
         } else {
-            model.addAttribute("userEmail", dto.getUserEmail());
+            model.addAttribute("userEmail", dto.userEmail());
             model.addAttribute("error", "인증 코드가 일치하지 않거나 만료되었습니다");
             model.addAttribute("step", 2);
             return "auth/find-pw";
@@ -204,20 +204,20 @@ public class UserController {
     public String findPwReset(@Valid @ModelAttribute("passwordResetDto") PasswordResetDto dto,
                               BindingResult bindingResult,
                               Model model, HttpSession session) {
-        if (!emailVerificationService.isVerified(session, dto.getUserEmail())) {
+        if (!emailVerificationService.isVerified(session, dto.userEmail())) {
             model.addAttribute("error", "이메일 인증이 필요합니다");
             return "auth/find-pw";
         }
         if (bindingResult.hasErrors() || !dto.isPasswordMatched()) {
             model.addAttribute("error", "비밀번호가 일치하지 않거나 형식이 올바르지 않습니다");
-            model.addAttribute("userEmail", dto.getUserEmail());
+            model.addAttribute("userEmail", dto.userEmail());
             model.addAttribute("step", 3);
             return "auth/find-pw";
         }
         try {
-            userService.resetPassword(dto.getUserEmail(), dto.getNewPassword());
-            emailVerificationService.clearVerification(session, dto.getUserEmail());
-            expireUserSessions(dto.getUserEmail()); // 비밀번호 변경 → 모든 활성 세션 강제 만료
+            userService.resetPassword(dto.userEmail(), dto.newPassword());
+            emailVerificationService.clearVerification(session, dto.userEmail());
+            expireUserSessions(dto.userEmail()); // 비밀번호 변경 → 모든 활성 세션 강제 만료
             return "redirect:/login?resetPw=true";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -248,7 +248,7 @@ public class UserController {
             return "redirect:/mypage";
         }
         try {
-            userService.updateProfile(userDetails.getUsername(), dto.getUserName(), dto.getOrgName());
+            userService.updateProfile(userDetails.getUsername(), dto.userName(), dto.orgName());
             redirectAttributes.addFlashAttribute("success", "개인정보가 수정되었습니다");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -268,7 +268,7 @@ public class UserController {
             return "redirect:/mypage";
         }
         try {
-            userService.changePassword(userDetails.getUsername(), dto.getCurrentPassword(), dto.getNewPassword());
+            userService.changePassword(userDetails.getUsername(), dto.currentPassword(), dto.newPassword());
             expireUserSessions(userDetails.getUsername()); // 다른 디바이스 세션까지 강제 만료
             return "redirect:/login?pwChanged=true";
         } catch (IllegalArgumentException e) {

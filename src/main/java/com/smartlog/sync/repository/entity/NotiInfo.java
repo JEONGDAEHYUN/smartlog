@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "NOTI_INFO")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -51,5 +50,16 @@ public class NotiInfo {
         this.regDt = LocalDateTime.now();
         if (this.isRead == null) this.isRead = "N";
         if (this.isSent == null) this.isSent = "N";
+    }
+
+    // 알림 읽음 처리
+    public void markAsRead() {
+        this.isRead = "Y";
+    }
+
+    // 알림 발송 처리 — 발송 시각 함께 기록
+    public void markAsSent(LocalDateTime sentDt) {
+        this.isSent = "Y";
+        this.sentDt = sentDt;
     }
 }

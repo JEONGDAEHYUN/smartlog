@@ -44,7 +44,7 @@ public class ScheduleController {
     // 일정 등록 페이지
     @GetMapping("/create")
     public String createPage(Model model) {
-        model.addAttribute("scheduleDto", new ScheduleDto());
+        model.addAttribute("scheduleDto", ScheduleDto.empty());
         return "schedule/form";
     }
 
@@ -69,15 +69,15 @@ public class ScheduleController {
                            @RequestParam(required = false) String from, Model model) {
         SchInfoDto sch = scheduleService.getById(schId);
         ScheduleDto dto = ScheduleDto.builder()
-                .schId(sch.getSchId())
-                .schTitle(sch.getSchTitle())
-                .startDt(sch.getStartDt())
-                .endDt(sch.getEndDt())
-                .priority(sch.getPriority())
-                .status(sch.getStatus())
-                .logId(sch.getLogId())
-                .recurring(sch.getRecurring())
-                .schMemo(sch.getSchMemo())
+                .schId(sch.schId())
+                .schTitle(sch.schTitle())
+                .startDt(sch.startDt())
+                .endDt(sch.endDt())
+                .priority(sch.priority())
+                .status(sch.status())
+                .logId(sch.logId())
+                .recurring(sch.recurring())
+                .schMemo(sch.schMemo())
                 .build();
         model.addAttribute("scheduleDto", dto);
         model.addAttribute("from", from);
@@ -149,20 +149,20 @@ public class ScheduleController {
 
         for (SchInfoDto sch : scheduleService.getByUserId(user.getUserId())) {
             // 원본 일정 추가
-            result.add(toEventMap(sch, sch.getStartDt(), sch.getEndDt(), sch.getStatus()));
+            result.add(toEventMap(sch, sch.startDt(), sch.endDt(), sch.status()));
 
             // 반복 일정이면 향후 90일치 가상 이벤트 생성
-            if (sch.getRecurring() != null) {
-                java.time.LocalTime startTime = sch.getStartDt().toLocalTime();
-                java.time.LocalTime endTime = sch.getEndDt() != null ? sch.getEndDt().toLocalTime() : null;
-                java.time.LocalDate baseDate = sch.getStartDt().toLocalDate();
+            if (sch.recurring() != null) {
+                java.time.LocalTime startTime = sch.startDt().toLocalTime();
+                java.time.LocalTime endTime = sch.endDt() != null ? sch.endDt().toLocalTime() : null;
+                java.time.LocalDate baseDate = sch.startDt().toLocalDate();
 
                 for (int i = 1; i <= 90; i++) {
                     java.time.LocalDate candidate = baseDate.plusDays(i);
                     if (candidate.isBefore(today.minusDays(7))) continue; // 과거 1주 이전은 스킵
 
                     boolean match = false;
-                    String rec = sch.getRecurring();
+                    String rec = sch.recurring();
 
                     if ("매일(주말포함)".equals(rec) || "매일".equals(rec)) {
                         match = true;
@@ -188,7 +188,7 @@ public class ScheduleController {
                         } else if (candidate.isBefore(today)) {
                             virtualStatus = "DONE";
                         } else {
-                            virtualStatus = sch.getStatus();
+                            virtualStatus = sch.status();
                         }
                         result.add(toEventMap(sch, newStart, newEnd, virtualStatus));
                     }
@@ -200,13 +200,13 @@ public class ScheduleController {
 
     private Map<String, Object> toEventMap(SchInfoDto sch, java.time.LocalDateTime start, java.time.LocalDateTime end, String status) {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", sch.getSchId());
-        map.put("title", sch.getSchTitle());
+        map.put("id", sch.schId());
+        map.put("title", sch.schTitle());
         map.put("start", start.toString());
         map.put("end", end != null ? end.toString() : null);
-        map.put("priority", sch.getPriority());
+        map.put("priority", sch.priority());
         map.put("status", status);
-        map.put("recurring", sch.getRecurring());
+        map.put("recurring", sch.recurring());
         return map;
     }
 
@@ -266,11 +266,11 @@ public class ScheduleController {
         java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm");
         return conflicts.stream().map(s -> {
             Map<String, Object> m = new HashMap<>();
-            m.put("schId", s.getSchId());
-            m.put("title", s.getSchTitle());
-            m.put("startDt", s.getStartDt().format(fmt));
-            m.put("endDt", s.getEndDt() != null ? s.getEndDt().format(fmt) : "");
-            m.put("priority", s.getPriority());
+            m.put("schId", s.schId());
+            m.put("title", s.schTitle());
+            m.put("startDt", s.startDt().format(fmt));
+            m.put("endDt", s.endDt() != null ? s.endDt().format(fmt) : "");
+            m.put("priority", s.priority());
             return m;
         }).toList();
     }
@@ -281,11 +281,11 @@ public class ScheduleController {
     }
 
     private void addStatsToModel(Model model, ScheduleStatsDto stats) {
-        model.addAttribute("totalCount", stats.getTotalCount());
-        model.addAttribute("highCount", stats.getHighCount());
-        model.addAttribute("midCount", stats.getMidCount());
-        model.addAttribute("lowCount", stats.getLowCount());
-        model.addAttribute("doneCount", stats.getDoneCount());
+        model.addAttribute("totalCount", stats.totalCount());
+        model.addAttribute("highCount", stats.highCount());
+        model.addAttribute("midCount", stats.midCount());
+        model.addAttribute("lowCount", stats.lowCount());
+        model.addAttribute("doneCount", stats.doneCount());
     }
 
     private UserInfo getUser(UserDetails userDetails) {

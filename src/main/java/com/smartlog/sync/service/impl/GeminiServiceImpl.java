@@ -78,13 +78,13 @@ public class GeminiServiceImpl implements GeminiService {
     // Gemini 응답 DTO에서 텍스트 추출 (candidates → content → parts → text)
     private String extractText(GeminiResponseDto response) {
         if (response == null
-                || response.getCandidates() == null
-                || response.getCandidates().isEmpty()) {
+                || response.candidates() == null
+                || response.candidates().isEmpty()) {
             throw new RuntimeException("Gemini 응답이 비어있습니다");
         }
-        return response.getCandidates().get(0)
-                .getContent()
-                .getParts().get(0)
-                .getText();
+        return response.candidates().get(0)
+                .content()
+                .parts().get(0)
+                .text();
     }
 }

@@ -45,7 +45,7 @@ public class ReportController {
         LocalDate end = LocalDate.parse(endDate);
 
         ReportInfoDto report = reportService.generate(user, reportType, start, end);
-        return "redirect:/report/detail/" + report.getRepId();
+        return "redirect:/report/detail/" + report.repId();
     }
 
     // 보고서 상세 (통계 포함)
@@ -58,14 +58,14 @@ public class ReportController {
         UserInfo user = getUser(userDetails);
         if (user != null) {
             ScheduleStatsDto stats = scheduleService.getStatsByUserId(user.getUserId());
-            model.addAttribute("totalSch", stats.getTotalCount());
-            model.addAttribute("highCount", stats.getHighCount());
-            model.addAttribute("midCount", stats.getMidCount());
-            model.addAttribute("lowCount", stats.getLowCount());
-            model.addAttribute("doneCount", stats.getDoneCount());
-            model.addAttribute("inProgressCount", stats.getInProgressCount());
-            model.addAttribute("plannedCount", stats.getPlannedCount());
-            model.addAttribute("doneRate", stats.getDoneRate());
+            model.addAttribute("totalSch", stats.totalCount());
+            model.addAttribute("highCount", stats.highCount());
+            model.addAttribute("midCount", stats.midCount());
+            model.addAttribute("lowCount", stats.lowCount());
+            model.addAttribute("doneCount", stats.doneCount());
+            model.addAttribute("inProgressCount", stats.inProgressCount());
+            model.addAttribute("plannedCount", stats.plannedCount());
+            model.addAttribute("doneRate", stats.doneRate());
         }
         return "report/detail";
     }

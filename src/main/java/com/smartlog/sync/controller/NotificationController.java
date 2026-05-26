@@ -46,7 +46,7 @@ public class NotificationController {
         List<NotiInfoDto> notificationDtos = NotiInfoDto.fromList(notifications);
 
         long totalCount = notificationDtos.size();
-        long unreadCount = notificationDtos.stream().filter(n -> "N".equals(n.getIsRead())).count();
+        long unreadCount = notificationDtos.stream().filter(n -> "N".equals(n.isRead())).count();
 
         model.addAttribute("notifications", notificationDtos);
         model.addAttribute("totalCount", totalCount);
@@ -60,7 +60,7 @@ public class NotificationController {
     public String markRead(@PathVariable Long notiId) {
         NotiInfo noti = notiInfoRepository.findById(notiId).orElse(null);
         if (noti != null) {
-            noti.setIsRead("Y");
+            noti.markAsRead();
             notiInfoRepository.save(noti);
         }
         return "redirect:/notifications";
@@ -73,7 +73,7 @@ public class NotificationController {
         if (user == null) return "redirect:/login";
 
         List<NotiInfo> unreadList = notiInfoRepository.findByUserInfoUserIdAndIsRead(user.getUserId(), "N");
-        unreadList.forEach(n -> n.setIsRead("Y"));
+        unreadList.forEach(NotiInfo::markAsRead);
         notiInfoRepository.saveAll(unreadList);
         return "redirect:/notifications";
     }
