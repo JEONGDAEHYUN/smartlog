@@ -28,6 +28,32 @@
 
         <div class="p-4">
             <div style="max-width: 620px;">
+                <!-- 원본 업무일지 카드 (이 일정이 업무일지에서 변환된 경우만 표시) -->
+                <div th:if="${linkedWorklog != null}" class="card border mb-3"
+                     style="background:#f9f4ff; border-color:#ddd6fe;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge" style="background:#7c3aed; color:#fff; font-size:10px;">원본 업무일지</span>
+                            <a th:href="@{/worklog/detail/{id}(id=${linkedWorklog.logId})}"
+                               class="small ms-auto text-decoration-none" style="color:#7c3aed; font-size:11px;">
+                                업무일지 상세 보기 →
+                            </a>
+                        </div>
+                        <!-- 원본 메모 -->
+                        <div class="small text-muted mb-1" style="font-size:11px;">원본 메모</div>
+                        <div class="small mb-2"
+                             style="background:#fff; padding:8px 10px; border-radius:4px; max-height:90px; overflow-y:auto; white-space:pre-wrap;"
+                             th:text="${linkedWorklog.rawContent}">원본 텍스트</div>
+                        <!-- AI 정제 결과 (있을 때만) -->
+                        <th:block th:if="${linkedWorklog.refinedContent != null}">
+                            <div class="small text-muted mb-1" style="font-size:11px;">AI 정제 결과</div>
+                            <div class="small"
+                                 style="background:#fff; padding:8px 10px; border-radius:4px; max-height:90px; overflow-y:auto; white-space:pre-wrap;"
+                                 th:text="${linkedWorklog.refinedContent}">정제 텍스트</div>
+                        </th:block>
+                    </div>
+                </div>
+
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <div class="sec-bar"></div>
                     <span class="fw-bold small"

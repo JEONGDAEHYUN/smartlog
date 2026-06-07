@@ -4,7 +4,8 @@ package com.smartlog.sync.dto;
 public enum ReportType {
     WEEKLY("weekly", "주간 업무요약 보고서"),
     MONTHLY("monthly", "월간 업무요약 보고서"),
-    HANDOVER("handover", "인수인계 보고서");
+    HANDOVER("handover", "인수인계 보고서"),
+    DIRECT("direct", "직접입력 보고서");          // 제목은 사용자 입력으로 override
 
     private final String code;
     private final String title;

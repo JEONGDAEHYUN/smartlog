@@ -9,8 +9,8 @@ import java.util.List;
 // 보고서 관련 비즈니스 로직 인터페이스
 public interface ReportService {
 
-    // AI 보고서 생성 (DTO 반환)
-    ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate);
+    // AI 보고서 생성 (DTO 반환) — direct 종류는 customTitle 을 보고서 제목으로 사용
+    ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle);
 
     // 사용자의 보고서 목록 조회 (DTO 반환)
     List<ReportInfoDto> getByUserId(Long userId);

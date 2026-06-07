@@ -23,14 +23,18 @@
         </div>
 
         <div class="p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <div class="sec-bar"></div>
                     <span class="fw-bold small">등록된 반복 업무</span>
                     <span class="badge bg-secondary-subtle text-secondary small ms-1"
-                          th:text="${#lists.size(recurringList)} + '건'">0건</span>
+                          id="recurringVisibleCount">0건</span>
                 </div>
-                <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">반복 업무 등록</a>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" class="form-control form-control-sm" style="width:200px;"
+                           placeholder="제목 검색..." id="recurringSearchInput">
+                    <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">반복 업무 등록</a>
+                </div>
             </div>
 
             <div class="card border">
@@ -38,7 +42,6 @@
                     <table class="table table-hover mb-0 small">
                         <thead class="table-light">
                             <tr>
-                                <th>#</th>
                                 <th>업무 제목</th>
                                 <th>반복 주기</th>
                                 <th>시작 시간</th>
@@ -48,13 +51,12 @@
                                 <th>관리</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="recurringTbody">
                             <tr th:if="${#lists.isEmpty(recurringList)}">
-                                <td colspan="8" class="text-center text-muted py-4">등록된 반복 업무가 없습니다.</td>
+                                <td colspan="7" class="text-center text-muted py-4">등록된 반복 업무가 없습니다.</td>
                             </tr>
-                            <tr th:each="sch : ${recurringList}">
-                                <td><span class="badge bg-light text-muted" style="font-family:monospace;"
-                                          th:text="'#' + ${sch.schId}">ID</span></td>
+                            <tr th:each="sch : ${recurringList}" class="recurring-row"
+                                th:data-title="${sch.schTitle}">
                                 <td class="fw-semibold" style="color:var(--n6); cursor:pointer;"
                                     th:text="${sch.schTitle}"
                                     th:onclick="'window.location.href=\'/schedule/edit/' + ${sch.schId} + '?from=recurring\''">제목</td>
@@ -87,10 +89,55 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 페이지네이션 -->
+            <nav class="d-flex justify-content-center mt-3">
+                <ul class="pagination pagination-sm mb-0" id="recurringPagination"></ul>
+            </nav>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 검색 + 페이지네이션 (페이지당 10개)
+    const RC_PAGE_SIZE = 10;
+    let rcPage = 1;
+    const rcRows = Array.from(document.querySelectorAll('#recurringTbody .recurring-row'));
+    const rcSearch = document.getElementById('recurringSearchInput');
+    const rcPagination = document.getElementById('recurringPagination');
+    const rcCount = document.getElementById('recurringVisibleCount');
+
+    function rcRender() {
+        const kw = (rcSearch.value || '').trim().toLowerCase();
+        const filtered = rcRows.filter(r => (r.dataset.title || '').toLowerCase().includes(kw));
+        const totalPages = Math.max(1, Math.ceil(filtered.length / RC_PAGE_SIZE));
+        if (rcPage > totalPages) rcPage = totalPages;
+
+        rcRows.forEach(r => r.style.display = 'none');
+        const start = (rcPage - 1) * RC_PAGE_SIZE;
+        filtered.slice(start, start + RC_PAGE_SIZE).forEach(r => r.style.display = '');
+
+        if (rcCount) rcCount.textContent = filtered.length + '건';
+
+        let html = '';
+        html += '<li class="page-item ' + (rcPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (rcPage - 1) + '">이전</a></li>';
+        for (let i = 1; i <= totalPages; i++) {
+            html += '<li class="page-item ' + (i === rcPage ? 'active' : '') + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        }
+        html += '<li class="page-item ' + (rcPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (rcPage + 1) + '">다음</a></li>';
+        rcPagination.innerHTML = html;
+
+        rcPagination.querySelectorAll('a.page-link').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const p = parseInt(a.dataset.page);
+                if (p >= 1 && p <= totalPages) { rcPage = p; rcRender(); }
+            });
+        });
+    }
+    if (rcSearch) rcSearch.addEventListener('keyup', () => { rcPage = 1; rcRender(); });
+    rcRender();
+</script>
 </body>
 </html>

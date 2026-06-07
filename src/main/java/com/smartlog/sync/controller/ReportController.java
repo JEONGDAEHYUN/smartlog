@@ -32,19 +32,20 @@ public class ReportController {
         return "report/create";
     }
 
-    // AI 보고서 생성 처리
+    // AI 보고서 생성 처리 (direct 종류는 customTitle 사용)
     @PostMapping("/create")
     public String create(@AuthenticationPrincipal UserDetails userDetails,
                          @RequestParam String reportType,
                          @RequestParam String startDate,
-                         @RequestParam String endDate) {
+                         @RequestParam String endDate,
+                         @RequestParam(required = false) String customTitle) {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
 
-        ReportInfoDto report = reportService.generate(user, reportType, start, end);
+        ReportInfoDto report = reportService.generate(user, reportType, start, end, customTitle);
         return "redirect:/report/detail/" + report.repId();
     }
 

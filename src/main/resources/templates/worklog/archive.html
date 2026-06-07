@@ -90,9 +90,15 @@
                                           th:classappend="${log.status == 'SUCCESS'} ? 'bg-success-subtle text-success' : (${log.status == 'PROCESSING'} ? 'bg-warning-subtle text-warning' : (${log.status == 'FAILED'} ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary'))"
                                           th:text="${log.status}">RAW</span>
                                 </td>
-                                <!-- 확정 일지 -->
+                                <!-- 확정 일지 — linkedSchIdMap 에 매칭 schId 있으면 "연결됨" + 일정 보기 링크 -->
                                 <td>
-                                    <span class="text-muted" style="font-size:11px;">미연결</span>
+                                    <th:block th:if="${linkedSchIdMap[log.logId] != null}">
+                                        <span class="badge bg-success-subtle text-success me-1" style="font-size:10px;">✅ 연결됨</span>
+                                        <a th:href="@{/schedule/edit/{id}(id=${linkedSchIdMap[log.logId]})}"
+                                           class="small text-decoration-none" style="color:var(--n6); font-size:11px;">일정 보기 →</a>
+                                    </th:block>
+                                    <span th:if="${linkedSchIdMap[log.logId] == null}"
+                                          class="text-muted" style="font-size:11px;">미연결</span>
                                 </td>
                                 <!-- 생성 일시 -->
                                 <td class="text-muted" style="font-size:11px;"

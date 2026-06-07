@@ -40,8 +40,8 @@ public class DashboardController {
 
         Long userId = user.getUserId();
 
-        // 오늘의 일정 (Service에서 DTO로 받음)
-        List<SchInfoDto> todaySchedules = scheduleService.getByUserId(userId);
+        // 오늘의 일정 — 단일 일정(startDt=오늘) + 반복 일정(오늘 패턴 매치) 모두 포함
+        List<SchInfoDto> todaySchedules = scheduleService.getTodaySchedules(userId);
         model.addAttribute("todaySchedules", todaySchedules);
 
         // 최근 업무일지 (Service에서 DTO로 받음)

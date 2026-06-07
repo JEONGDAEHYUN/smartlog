@@ -3,9 +3,11 @@ package com.smartlog.sync.service;
 import com.smartlog.sync.dto.SchInfoDto;
 import com.smartlog.sync.dto.ScheduleDto;
 import com.smartlog.sync.dto.ScheduleStatsDto;
+import com.smartlog.sync.repository.entity.SchCompletion;
 import com.smartlog.sync.repository.entity.SchInfo;
 import com.smartlog.sync.repository.entity.UserInfo;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,4 +37,15 @@ public interface ScheduleService {
 
     // 사용자 일정의 통계 조회 (우선순위/상태별 카운트 + 완료율)
     ScheduleStatsDto getStatsByUserId(Long userId);
+
+    // 오늘 자 일정 — 단일 일정(startDt=오늘) + 반복 일정(오늘 패턴 매치)을 모두 포함
+    List<SchInfoDto> getTodaySchedules(Long userId);
+
+    // ─── 반복 일정 완료 토글 (가상 이벤트 추적) ───
+    // 해당 (schId, date) 기록이 없으면 INSERT, 있으면 DELETE
+    // 반환: 토글 후 완료 상태 (true=DONE, false=PLANNED)
+    boolean toggleCompletion(Long schId, LocalDate date);
+
+    // 사용자의 모든 반복 일정 완료 기록 일괄 조회 (apiEvents 에서 N+1 회피용)
+    List<SchCompletion> findCompletionsByUserId(Long userId);
 }

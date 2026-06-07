@@ -28,9 +28,31 @@
                     <div class="sec-bar"></div>
                     <span class="fw-bold small">보고서 목록</span>
                     <span class="badge bg-secondary-subtle text-secondary small ms-2"
+                          id="reportCount"
                           th:text="${#lists.size(reports)} + '건'">0건</span>
                 </div>
                 <a th:href="@{/report/create}" class="btn btn-sm text-white" style="background:var(--n6);">새 보고서 생성</a>
+            </div>
+
+            <!-- 검색 / 기간 필터 (클라이언트 사이드 필터링) -->
+            <div class="card border mb-3">
+                <div class="card-body p-3 d-flex flex-wrap gap-2 align-items-end">
+                    <div class="flex-grow-1" style="min-width:180px;">
+                        <label class="form-label small text-muted mb-1">제목 검색</label>
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="보고서 제목으로 검색..." id="reportSearchInput">
+                    </div>
+                    <div>
+                        <label class="form-label small text-muted mb-1">생성일 시작</label>
+                        <input type="date" class="form-control form-control-sm" id="reportStartDate">
+                    </div>
+                    <div>
+                        <label class="form-label small text-muted mb-1">생성일 종료</label>
+                        <input type="date" class="form-control form-control-sm" id="reportEndDate">
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="resetReportFilter()">초기화</button>
+                </div>
             </div>
 
             <div class="card border">
@@ -38,20 +60,19 @@
                     <table class="table table-hover mb-0 small">
                         <thead class="table-light">
                             <tr>
-                                <th>#</th>
                                 <th>보고서 제목</th>
                                 <th>내용 (요약)</th>
                                 <th>생성일</th>
                                 <th>관리</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="reportTbody">
                             <tr th:if="${#lists.isEmpty(reports)}">
-                                <td colspan="5" class="text-center text-muted py-4">생성된 보고서가 없습니다.</td>
+                                <td colspan="4" class="text-center text-muted py-4">생성된 보고서가 없습니다.</td>
                             </tr>
-                            <tr th:each="rep : ${reports}">
-                                <td><span class="badge bg-light text-muted" style="font-family:monospace;"
-                                          th:text="'#' + ${rep.repId}">ID</span></td>
+                            <tr th:each="rep : ${reports}" class="report-row"
+                                th:data-title="${rep.repTitle}"
+                                th:data-regdt="${#temporals.format(rep.regDt, 'yyyy-MM-dd')}">
                                 <td>
                                     <a th:href="@{/report/detail/{id}(id=${rep.repId})}"
                                        class="fw-semibold text-decoration-none" style="color:var(--n6);"
@@ -75,10 +96,80 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 페이지네이션 -->
+            <nav class="d-flex justify-content-center mt-3">
+                <ul class="pagination pagination-sm mb-0" id="reportPagination"></ul>
+            </nav>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 보고서 제목 검색 + 생성일 기간 필터 + 페이지네이션 (클라이언트 사이드, 페이지당 10개)
+    const RP_PAGE_SIZE = 10;
+    let rpPage = 1;
+    const allReportRows = Array.from(document.querySelectorAll('.report-row'));
+    const searchInput = document.getElementById('reportSearchInput');
+    const startDateInput = document.getElementById('reportStartDate');
+    const endDateInput = document.getElementById('reportEndDate');
+    const countBadge = document.getElementById('reportCount');
+    const rpPagination = document.getElementById('reportPagination');
+
+    function getFilteredReports() {
+        const keyword = (searchInput.value || '').trim().toLowerCase();
+        const startDate = startDateInput.value || '';
+        const endDate = endDateInput.value || '';
+        return allReportRows.filter(row => {
+            const title = (row.dataset.title || '').toLowerCase();
+            const regDt = row.dataset.regdt || '';
+            return (keyword === '' || title.includes(keyword))
+                && (startDate === '' || regDt >= startDate)
+                && (endDate === '' || regDt <= endDate);
+        });
+    }
+
+    function renderReports() {
+        const filtered = getFilteredReports();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / RP_PAGE_SIZE));
+        if (rpPage > totalPages) rpPage = totalPages;
+
+        allReportRows.forEach(r => r.style.display = 'none');
+        const start = (rpPage - 1) * RP_PAGE_SIZE;
+        filtered.slice(start, start + RP_PAGE_SIZE).forEach(r => r.style.display = '');
+
+        if (countBadge) countBadge.textContent = filtered.length + '건';
+
+        let html = '';
+        html += '<li class="page-item ' + (rpPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (rpPage - 1) + '">이전</a></li>';
+        for (let i = 1; i <= totalPages; i++) {
+            html += '<li class="page-item ' + (i === rpPage ? 'active' : '') + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        }
+        html += '<li class="page-item ' + (rpPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (rpPage + 1) + '">다음</a></li>';
+        rpPagination.innerHTML = html;
+
+        rpPagination.querySelectorAll('a.page-link').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const p = parseInt(a.dataset.page);
+                if (p >= 1 && p <= totalPages) { rpPage = p; renderReports(); }
+            });
+        });
+    }
+
+    function resetReportFilter() {
+        searchInput.value = '';
+        startDateInput.value = '';
+        endDateInput.value = '';
+        rpPage = 1;
+        renderReports();
+    }
+
+    if (searchInput) searchInput.addEventListener('keyup', () => { rpPage = 1; renderReports(); });
+    if (startDateInput) startDateInput.addEventListener('change', () => { rpPage = 1; renderReports(); });
+    if (endDateInput) endDateInput.addEventListener('change', () => { rpPage = 1; renderReports(); });
+    renderReports();
+</script>
 </body>
 </html>

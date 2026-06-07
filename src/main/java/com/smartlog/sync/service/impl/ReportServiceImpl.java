@@ -32,7 +32,7 @@ public class ReportServiceImpl implements ReportService {
     private final GeminiService geminiService;
 
     @Override
-    public ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate) {
+    public ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle) {
         Long userId = user.getUserId();
 
         LocalDateTime startDt = startDate.atStartOfDay();
@@ -53,7 +53,10 @@ public class ReportServiceImpl implements ReportService {
             reportContent = "보고서 생성에 실패했습니다. 다시 시도해주세요.\n원인: " + e.getMessage();
         }
 
-        String title = ReportType.toTitle(reportType);
+        // direct 종류는 사용자 입력 제목 우선, 그 외는 enum 매핑 제목
+        String title = ("direct".equals(reportType) && customTitle != null && !customTitle.isBlank())
+                ? customTitle.trim()
+                : ReportType.toTitle(reportType);
 
         ReportInfo report = ReportInfo.builder()
                 .userInfo(user)

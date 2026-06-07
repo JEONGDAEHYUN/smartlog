@@ -38,6 +38,7 @@ out/
 
 ### 환경/보안 관련 ###
 application-local.yml
+application-prod.yml
 *.env
 
 ### 로컬 참고자료 ###

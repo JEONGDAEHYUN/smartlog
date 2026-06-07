@@ -56,8 +56,7 @@
                                     <span class="text-danger fw-bold" th:text="${highCount} + '건'">0건</span>
                                 </div>
                                 <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
-                                    <div style="height:100%; background:#c0392b; border-radius:5px;"
-                                         th:style="'width:' + (${totalSch > 0} ? ${highCount * 100 / totalSch} : 0) + '%'"></div>
+                                    <div th:style="'height:100%; background:#c0392b; border-radius:5px; width:' + (${totalSch > 0} ? ${highCount * 100 / totalSch} : 0) + '%'"></div>
                                 </div>
                             </div>
                             <!-- MID -->
@@ -67,8 +66,7 @@
                                     <span class="fw-bold" style="color:#b7770d;" th:text="${midCount} + '건'">0건</span>
                                 </div>
                                 <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
-                                    <div style="height:100%; background:#b7770d; border-radius:5px;"
-                                         th:style="'width:' + (${totalSch > 0} ? ${midCount * 100 / totalSch} : 0) + '%'"></div>
+                                    <div th:style="'height:100%; background:#b7770d; border-radius:5px; width:' + (${totalSch > 0} ? ${midCount * 100 / totalSch} : 0) + '%'"></div>
                                 </div>
                             </div>
                             <!-- LOW -->
@@ -78,8 +76,7 @@
                                     <span class="text-success fw-bold" th:text="${lowCount} + '건'">0건</span>
                                 </div>
                                 <div style="height:10px; background:#f0f4f8; border-radius:5px; overflow:hidden;">
-                                    <div style="height:100%; background:#1a7a4a; border-radius:5px;"
-                                         th:style="'width:' + (${totalSch > 0} ? ${lowCount * 100 / totalSch} : 0) + '%'"></div>
+                                    <div th:style="'height:100%; background:#1a7a4a; border-radius:5px; width:' + (${totalSch > 0} ? ${lowCount * 100 / totalSch} : 0) + '%'"></div>
                                 </div>
                             </div>
                         </div>
@@ -96,12 +93,9 @@
                             </div>
                             <!-- 세그먼트 바 -->
                             <div class="d-flex mb-3" style="height:18px; border-radius:6px; overflow:hidden;">
-                                <div style="background:#1a7a4a;"
-                                     th:style="'width:' + (${totalSch > 0} ? ${doneCount * 100 / totalSch} : 0) + '%'"></div>
-                                <div style="background:#b7770d;"
-                                     th:style="'width:' + (${totalSch > 0} ? ${inProgressCount * 100 / totalSch} : 0) + '%'"></div>
-                                <div style="background:var(--n6);"
-                                     th:style="'width:' + (${totalSch > 0} ? ${plannedCount * 100 / totalSch} : 0) + '%'"></div>
+                                <div th:style="'background:#1a7a4a; width:' + (${totalSch > 0} ? ${doneCount * 100 / totalSch} : 0) + '%'"></div>
+                                <div th:style="'background:#b7770d; width:' + (${totalSch > 0} ? ${inProgressCount * 100 / totalSch} : 0) + '%'"></div>
+                                <div th:style="'background:var(--n6); width:' + (${totalSch > 0} ? ${plannedCount * 100 / totalSch} : 0) + '%'"></div>
                             </div>
                             <div class="d-flex justify-content-between small">
                                 <span><span class="d-inline-block me-1" style="width:10px;height:10px;background:#1a7a4a;border-radius:2px;"></span>DONE <strong th:text="${doneCount}">0</strong>건</span>

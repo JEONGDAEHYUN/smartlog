@@ -3,6 +3,8 @@ package com.smartlog.sync.controller;
 import com.smartlog.sync.dto.SchInfoDto;
 import com.smartlog.sync.dto.ScheduleDto;
 import com.smartlog.sync.dto.WorklogDto;
+import com.smartlog.sync.repository.SchInfoRepository;
+import com.smartlog.sync.repository.entity.SchInfo;
 import com.smartlog.sync.repository.entity.UserInfo;
 import com.smartlog.sync.service.ScheduleService;
 import com.smartlog.sync.service.UserService;
@@ -15,7 +17,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // AI 업무일지 Controller
 @Controller
@@ -26,6 +30,7 @@ public class WorklogController {
     private final WorklogService worklogService;
     private final ScheduleService scheduleService;
     private final UserService userService;
+    private final SchInfoRepository schInfoRepository;
 
     // 원본 메모 작성 페이지 (오늘 일정 함께 표시)
     @GetMapping("/write")
@@ -77,7 +82,7 @@ public class WorklogController {
         return "redirect:/worklog/detail/" + logId;
     }
 
-    // 업무 아카이브 (목록)
+    // 업무 아카이브 (목록) — 업무일지별 일정 연결 여부 동적 표시
     @GetMapping("/archive")
     public String archive(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
@@ -85,6 +90,17 @@ public class WorklogController {
 
         List<WorklogDto> worklogs = worklogService.getByUserId(user.getUserId());
         model.addAttribute("worklogs", worklogs);
+
+        // 각 업무일지의 LOG_ID 로 SCH_INFO 조회 → 연결된 schId 만 Map 에 담음
+        // archive.html 에서 ${linkedSchIdMap[log.logId]} 로 연결 여부 + 일정 보기 링크 분기 처리
+        Map<String, Long> linkedSchIdMap = new HashMap<>();
+        for (WorklogDto w : worklogs) {
+            if (w.logId() == null) continue;
+            SchInfo sch = schInfoRepository.findByLogId(w.logId());
+            if (sch != null) linkedSchIdMap.put(w.logId(), sch.getSchId());
+        }
+        model.addAttribute("linkedSchIdMap", linkedSchIdMap);
+
         return "worklog/archive";
     }
 
@@ -114,6 +130,7 @@ public class WorklogController {
     }
 
     // 일정 확정 처리 (SCH_INFO INSERT + LOG_ID 연결)
+    // 확정 후 → 업무 아카이브로 이동 (업무일지 도메인 안에서 흐름 완결)
     @PostMapping("/confirm/{logId}")
     public String confirm(@PathVariable String logId,
                           @AuthenticationPrincipal UserDetails userDetails,
@@ -123,7 +140,7 @@ public class WorklogController {
 
         // record 는 immutable — logId 만 교체한 새 인스턴스 생성
         scheduleService.create(user, scheduleDto.withLogId(logId));
-        return "redirect:/schedule/list";
+        return "redirect:/worklog/archive";
     }
 
     // 업무일지 삭제
