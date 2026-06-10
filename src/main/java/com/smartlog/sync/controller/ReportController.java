@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -69,7 +70,8 @@ public class ReportController {
 
     // 미리보기 → 실제 저장 (REPORT_INFO INSERT) 후 상세 페이지로 이동
     @PostMapping("/save")
-    public String savePreview(@AuthenticationPrincipal UserDetails userDetails, HttpSession session) {
+    public String savePreview(@AuthenticationPrincipal UserDetails userDetails, HttpSession session,
+                              RedirectAttributes redirectAttributes) {
         UserInfo user = getUser(userDetails);
         if (user == null) return "redirect:/login";
 
@@ -80,6 +82,7 @@ public class ReportController {
 
         ReportInfoDto saved = reportService.savePreview(user, preview);
         session.removeAttribute(PREVIEW_SESSION_KEY);     // 저장 후 세션 정리
+        redirectAttributes.addFlashAttribute("justSaved", true);  // 상세 화면에서 "저장 완료" 모달 표시용
         return "redirect:/report/detail/" + saved.repId();
     }
 

@@ -58,11 +58,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateProfile(String userEmail, String userName, String orgName) {
-        UserInfo user = userInfoRepository.findByUserEmail(userEmail)
+    public boolean updateProfile(String currentEmail, String newEmail, String userName, String orgName) {
+        UserInfo user = userInfoRepository.findByUserEmail(currentEmail)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다"));
+
         user.updateProfile(userName, orgName);
+
+        // 이메일(로그인 ID) 변경 처리 — 값이 실제로 바뀐 경우에만 중복 검사 후 반영
+        boolean emailChanged = newEmail != null && !newEmail.equalsIgnoreCase(currentEmail);
+        if (emailChanged) {
+            if (userInfoRepository.existsByUserEmail(newEmail)) {
+                throw new IllegalArgumentException("이미 사용 중인 이메일입니다");
+            }
+            user.changeEmail(newEmail);
+        }
+
         userInfoRepository.save(user);
+        return emailChanged;
     }
 
     @Override

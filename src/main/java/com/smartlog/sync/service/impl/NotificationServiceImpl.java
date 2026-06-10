@@ -76,8 +76,9 @@ public class NotificationServiceImpl implements NotificationService {
         createScheduleNotification(sch);
     }
 
-    // 매 1분마다 발송 대기 알림 체크 → 발송 + 다음 단계 알림 생성
-    @Scheduled(fixedRate = 60000)
+    // 매 20초마다 발송 대기 알림 체크 → 발송 + 다음 단계 알림 생성
+    // (기존 60초 → 20초로 단축: 발송 기준 시각 경과 후 화면 반영 지연을 최대 20초로 축소)
+    @Scheduled(fixedRate = 20000)
     public void checkAndSendNotifications() {
         List<NotiInfo> pendingList = notiInfoRepository.findByIsSent("N");
         LocalDateTime now = LocalDateTime.now();

@@ -94,6 +94,10 @@
                     <div th:if="${param.pwChanged}" class="alert alert-success small py-2">
                         비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.
                     </div>
+                    <!-- 이메일(로그인 ID) 변경 안내 -->
+                    <div th:if="${param.emailChanged}" class="alert alert-success small py-2">
+                        이메일이 변경되었습니다. 새 이메일로 다시 로그인해주세요.
+                    </div>
                     <!-- 세션 만료 메시지 (비밀번호 변경 등으로 강제 만료된 세션 접근 시) -->
                     <div th:if="${param.expired}" class="alert alert-info small py-2">
                         보안 정책에 의해 로그아웃되었습니다. 다시 로그인해주세요.

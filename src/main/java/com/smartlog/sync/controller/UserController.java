@@ -244,11 +244,18 @@ public class UserController {
                                 BindingResult bindingResult,
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("error", "이름과 조직명은 필수입니다");
+            redirectAttributes.addFlashAttribute("error", "입력값을 확인해주세요 (이메일 형식 / 이름 / 조직명)");
             return "redirect:/mypage";
         }
         try {
-            userService.updateProfile(userDetails.getUsername(), dto.userName(), dto.orgName());
+            boolean emailChanged = userService.updateProfile(
+                    userDetails.getUsername(), dto.userEmail(), dto.userName(), dto.orgName());
+
+            // 이메일(로그인 ID)이 바뀌면 현재 인증 주체가 무효 → 세션 강제 만료 후 재로그인 유도
+            if (emailChanged) {
+                expireUserSessions(userDetails.getUsername());
+                return "redirect:/login?emailChanged=true";
+            }
             redirectAttributes.addFlashAttribute("success", "개인정보가 수정되었습니다");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());

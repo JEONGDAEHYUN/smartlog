@@ -55,6 +55,20 @@ public class NotificationController {
         return "notification/list";
     }
 
+    // 미읽은 알림 개수 (토픽바 배지 폴링용) — JSON 반환
+    @GetMapping("/unread-count")
+    @ResponseBody
+    public Map<String, Long> unreadCount(@AuthenticationPrincipal UserDetails userDetails) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return Map.of("count", 0L);
+
+        // 발송완료(Y) + 미읽음(N) 알림을, 목록과 동일하게 일정별 최신 1건으로 dedup 후 카운트
+        List<NotiInfo> unread = notiInfoRepository
+                .findByUserInfoUserIdAndIsSentAndIsRead(user.getUserId(), "Y", "N");
+        long count = filterLatestPerSchedule(unread).size();
+        return Map.of("count", count);
+    }
+
     // 알림 읽음 처리
     @PostMapping("/read/{notiId}")
     public String markRead(@PathVariable Long notiId) {

@@ -46,14 +46,24 @@
         return DEFAULT_STYLE;
     }
 
-    // 한 줄 안의 [HH:MM~HH:MM] / [HH:MM-HH:MM] 패턴을 파란 badge 로 변환
+    // 시간 badge 공통 마크업
+    function timeBadge(text) {
+        return '<span style="display:inline-block;padding:1px 7px;margin:0 3px 0 0;' +
+               'background:#e3f2fd;color:#1565c0;border-radius:4px;font-size:11px;' +
+               'font-weight:600;font-family:monospace;">' + text + '</span>';
+    }
+
+    // 한 줄 안의 시간 패턴을 파란 badge 로 변환
+    // 지원 형태: [HH:MM~HH:MM] (구간) / [HH:MM~] (종료시간 없음) / [HH:MM] (단일 시각)
+    // 종료시간(END_DT)이 없을 때 UI 가 깨지지 않도록 세 경우를 모두 처리한다.
+    // 상태(진행중/완료 등)는 시간으로 단정하지 않고 시간만 표기한다.
     function highlightTimeRange(escapedLine) {
         return escapedLine.replace(
-            /\[(\d{1,2}:\d{2}\s*[~\-]\s*\d{1,2}:\d{2})\]/g,
-            function (_, range) {
-                return '<span style="display:inline-block;padding:1px 7px;margin:0 3px 0 0;' +
-                       'background:#e3f2fd;color:#1565c0;border-radius:4px;font-size:11px;' +
-                       'font-weight:600;font-family:monospace;">' + range + '</span>';
+            /\[\s*(\d{1,2}:\d{2})\s*(?:[~\-]\s*(\d{1,2}:\d{2})?)?\s*\]/g,
+            function (_, start, end) {
+                if (end) return timeBadge(start + '~' + end);   // 정상 구간
+                // 종료시간 없음: 시작 시각만 표기 (상태 추정 문구 없음)
+                return timeBadge(start);
             }
         );
     }

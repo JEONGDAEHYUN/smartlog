@@ -122,11 +122,18 @@ public class ReportServiceImpl implements ReportService {
         StringBuilder sb = new StringBuilder();
 
         sb.append("[일정 데이터 - 총 ").append(schedules.size()).append("건]\n");
+        java.time.format.DateTimeFormatter dtf =
+                java.time.format.DateTimeFormatter.ofPattern("MM-dd HH:mm");
         for (SchInfo sch : schedules) {
+            // 종료시간(END_DT)이 없으면 시작 시간만 표시 — 상태는 STATUS 컬럼으로 별도 전달되므로
+            // 시간 구간으로 진행중/완료를 단정하지 않는다
+            String timeInfo = sch.getEndDt() != null
+                    ? sch.getStartDt().format(dtf) + "~" + sch.getEndDt().format(dtf)
+                    : sch.getStartDt().format(dtf);
             sb.append("- ").append(sch.getSchTitle())
                     .append(" | ").append(sch.getPriority())
                     .append(" | ").append(sch.getStatus())
-                    .append(" | ").append(sch.getStartDt()).append("\n");
+                    .append(" | ").append(timeInfo).append("\n");
         }
 
         sb.append("\n[업무일지 데이터 - 총 ").append(worklogs.size()).append("건]\n");

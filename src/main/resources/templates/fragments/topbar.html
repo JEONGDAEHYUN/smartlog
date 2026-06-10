@@ -11,6 +11,12 @@
         <span class="tb-sub d-none d-md-inline">AI 기반 업무일지 관리 시스템</span>
     </div>
     <div class="d-flex align-items-center gap-3">
+        <!-- 알림 벨 + 미읽음 배지 (20초마다 폴링하여 자동 갱신) -->
+        <a th:href="@{/notifications}" class="position-relative text-white text-decoration-none"
+           title="알림 센터" style="font-size:16px; line-height:1;">🔔
+            <span id="notiBadge" class="position-absolute badge rounded-pill bg-danger fw-bold"
+                  style="top:-7px; right:-9px; font-size:9px; padding:2px 5px; display:none;">0</span>
+        </a>
         <div class="d-flex align-items-center gap-2 text-white small">
             <div class="tb-avatar">U</div>
             <span sec:authentication="name">사용자</span>
@@ -19,5 +25,30 @@
             <button type="submit" class="btn btn-sm text-white-50" style="font-size:11px;">로그아웃</button>
         </form>
     </div>
+
+    <!-- 미읽은 알림 개수 폴링 — 배지 자동 갱신 (프래그먼트 내부에 두어 모든 페이지에서 동작) -->
+    <script>
+        (function () {
+            var badge = document.getElementById('notiBadge');
+            if (!badge) return;
+            function poll() {
+                fetch('/notifications/unread-count', { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (d) {
+                        if (!d) return;
+                        var c = d.count || 0;
+                        if (c > 0) {
+                            badge.textContent = c > 99 ? '99+' : c;
+                            badge.style.display = '';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(function () { /* 네트워크 오류는 조용히 무시 */ });
+            }
+            poll();                   // 페이지 진입 즉시 1회
+            setInterval(poll, 20000); // 이후 20초마다 갱신
+        })();
+    </script>
 </nav>
 </html>

@@ -164,10 +164,10 @@ public class ScheduleController {
 
         for (SchInfoDto sch : scheduleService.getByUserId(user.getUserId())) {
             // 원본 일정 추가
-            // — 반복 일정: 원본 startDt 날짜의 완료 기록 기반으로 표시
+            // — 반복 일정: 그 날짜에 완료 기록이 있으면 DONE, 없으면 저장된 status 반영(IN_PROGRESS 포함)
             // — 단일 일정: 원본 status 그대로
             String originalStatus = (sch.recurring() != null)
-                    ? (completionKeys.contains(sch.schId() + ":" + sch.startDt().toLocalDate()) ? "DONE" : "PLANNED")
+                    ? (completionKeys.contains(sch.schId() + ":" + sch.startDt().toLocalDate()) ? "DONE" : sch.status())
                     : sch.status();
             result.add(toEventMap(sch, sch.startDt(), sch.endDt(), originalStatus));
 
@@ -202,9 +202,9 @@ public class ScheduleController {
                     if (match) {
                         java.time.LocalDateTime newStart = candidate.atTime(startTime);
                         java.time.LocalDateTime newEnd = endTime != null ? candidate.atTime(endTime) : null;
-                        // 가상 이벤트 status — 사용자가 그 날짜에 완료 표시한 경우에만 DONE
+                        // 가상 이벤트 status — 그 날짜에 완료 표시했으면 DONE, 아니면 반복 일정의 현재 status 반영
                         String key = sch.schId() + ":" + candidate;
-                        String virtualStatus = completionKeys.contains(key) ? "DONE" : "PLANNED";
+                        String virtualStatus = completionKeys.contains(key) ? "DONE" : sch.status();
                         result.add(toEventMap(sch, newStart, newEnd, virtualStatus));
                     }
                 }

@@ -61,6 +61,11 @@ public class UserInfo {
         this.orgName = orgName;
     }
 
+    // 이메일(로그인 ID) 변경 — 중복 검사는 Service 계층에서 선행
+    public void changeEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
     // 로그인 실패 카운트 1 증가
     public void incrementFailCount() {
         this.failCount = (this.failCount == null ? 0 : this.failCount) + 1;

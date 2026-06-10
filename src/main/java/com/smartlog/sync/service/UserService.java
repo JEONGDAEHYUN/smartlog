@@ -19,8 +19,8 @@ public interface UserService {
     // 비밀번호 재설정
     void resetPassword(String userEmail, String newPassword);
 
-    // 개인정보 수정 (이름, 조직명)
-    void updateProfile(String userEmail, String userName, String orgName);
+    // 개인정보 수정 (이메일, 이름, 조직명) — 이메일 변경 시 true 반환(재로그인 유도용)
+    boolean updateProfile(String currentEmail, String newEmail, String userName, String orgName);
 
     // 비밀번호 변경 (현재 비밀번호 검증 포함)
     void changePassword(String userEmail, String currentPassword, String newPassword);
