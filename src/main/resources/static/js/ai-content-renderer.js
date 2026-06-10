@@ -162,9 +162,10 @@
                 }
             }
             if (!hasContent) {
+                // 내용 없는 섹션(비고 등)은 "없음" 으로 간결하게 표시
                 bodyHtml =
                     '<div style="color:#8a9bb0;font-size:12px;font-style:italic;padding:8px 0;">' +
-                    '해당 사항 없음</div>';
+                    '없음</div>';
             }
 
             html +=
