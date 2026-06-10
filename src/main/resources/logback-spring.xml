@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 로그 생성 폴더 / 파일명 정의 (EC2 에 동일 폴더 mkdir 필요) -->
+    <property name="LOG_PATH" value="/data/log/smartlog"/>
+    <property name="LOG_FILE_NAME" value="smartlog"/>
+
+    <!-- 로그 출력 패턴 -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <!-- 1) 콘솔(Console) Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 2) 파일(File) Appender — 일자별/크기별 자동 분할 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 현재 기록 중인 파일 -->
+        <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 분할 파일명: smartlog.2026-06-09.0.log.gz -->
+            <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <!-- 파일 1개 최대 10MB -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 30일치 보관 -->
+            <maxHistory>30</maxHistory>
+            <!-- 전체 로그 누적 1GB 초과 시 오래된 것부터 삭제 -->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 환경(profile) 별 로그 레벨 -->
+    <!-- 로컬: 콘솔 + 파일 둘 다, 디버깅 위해 SQL 로그 출력 -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.smartlog.sync" level="DEBUG"/>
+    </springProfile>
+
+    <!-- 운영(EC2): 콘솔 + 파일 둘 다 (콘솔은 systemd / nohup 가 캡쳐) -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.smartlog.sync" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+    </springProfile>
+
+</configuration>

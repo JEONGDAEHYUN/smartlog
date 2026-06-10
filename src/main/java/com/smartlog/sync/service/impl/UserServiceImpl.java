@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
                 .userPwd(passwordEncoder.encode(dto.userPwd()))
                 .userName(dto.userName())
                 .orgName(dto.orgName())
-                .userRole("ROLE_USER")
+                .userRole(dto.userRoleSafe())   // 폼 선택값(화이트리스트 검증) — 미지정 시 ROLE_USER
                 .build();
         userInfoRepository.save(userInfo);
     }

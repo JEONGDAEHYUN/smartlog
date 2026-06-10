@@ -24,10 +24,18 @@ public record SignupDto(
         String userName,
 
         @NotBlank(message = "조직명을 입력해주세요")
-        String orgName
+        String orgName,
+
+        // 권한 (ROLE_USER / ROLE_ADMIN) — 폼에서 라디오로 선택, 기본 ROLE_USER
+        String userRole
 ) {
-    // Thymeleaf 폼 초기 바인딩용 빈 인스턴스
+    // 화이트리스트 검증 — yml/DB 오염 방지, 미지정 또는 비허용 값은 ROLE_USER로 강제
+    public String userRoleSafe() {
+        return "ROLE_ADMIN".equals(userRole) ? "ROLE_ADMIN" : "ROLE_USER";
+    }
+
+    // Thymeleaf 폼 초기 바인딩용 빈 인스턴스 (기본 권한 ROLE_USER 선택 상태)
     public static SignupDto empty() {
-        return new SignupDto(null, null, null, null);
+        return new SignupDto(null, null, null, null, "ROLE_USER");
     }
 }

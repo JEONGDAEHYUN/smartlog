@@ -32,7 +32,7 @@ public class ReportServiceImpl implements ReportService {
     private final GeminiService geminiService;
 
     @Override
-    public ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle) {
+    public ReportInfoDto generatePreview(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle) {
         Long userId = user.getUserId();
 
         LocalDateTime startDt = startDate.atStartOfDay();
@@ -50,7 +50,7 @@ public class ReportServiceImpl implements ReportService {
             reportContent = geminiService.refineWorklog(prompt);
         } catch (Exception e) {
             log.error("보고서 생성 실패: {}", e.getMessage());
-            reportContent = "보고서 생성에 실패했습니다. 다시 시도해주세요.\n원인: " + e.getMessage();
+            reportContent = friendlyErrorMessage(e);
         }
 
         // direct 종류는 사용자 입력 제목 우선, 그 외는 enum 매핑 제목
@@ -58,10 +58,22 @@ public class ReportServiceImpl implements ReportService {
                 ? customTitle.trim()
                 : ReportType.toTitle(reportType);
 
-        ReportInfo report = ReportInfo.builder()
-                .userInfo(user)
+        // DB 저장 없이 메모리 상의 미리보기 DTO 만 반환 (repId=null, regDt=null)
+        return ReportInfoDto.builder()
+                .repId(null)
                 .repTitle(title)
                 .repCont(reportContent)
+                .regDt(null)
+                .build();
+    }
+
+    @Override
+    public ReportInfoDto savePreview(UserInfo user, ReportInfoDto preview) {
+        // 미리보기 DTO 의 제목/본문을 그대로 REPORT_INFO 에 INSERT
+        ReportInfo report = ReportInfo.builder()
+                .userInfo(user)
+                .repTitle(preview.repTitle())
+                .repCont(preview.repCont())
                 .build();
         return ReportInfoDto.from(reportInfoRepository.save(report));
     }
@@ -81,6 +93,28 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public void delete(Long repId) {
         reportInfoRepository.deleteById(repId);
+    }
+
+    // Gemini API 예외 → 사용자 친화 메시지 변환 (raw JSON / 스택트레이스 노출 차단)
+    private String friendlyErrorMessage(Exception e) {
+        String msg = e.getMessage();
+        String userMsg;
+        if (msg == null) {
+            userMsg = "알 수 없는 오류가 발생했습니다.";
+        } else if (msg.contains("503") || msg.contains("UNAVAILABLE")) {
+            userMsg = "AI 서비스가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.";
+        } else if (msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED")) {
+            userMsg = "AI 서비스 사용량 한도에 도달했습니다. 잠시 후 다시 시도해주세요.";
+        } else if (msg.contains("401") || msg.contains("403") || msg.contains("UNAUTHENTICATED") || msg.contains("PERMISSION_DENIED")) {
+            userMsg = "AI 서비스 인증에 문제가 있습니다. 관리자에게 문의해주세요.";
+        } else if (msg.toLowerCase().contains("timeout")) {
+            userMsg = "AI 서비스 응답 시간이 초과되었습니다. 다시 시도해주세요.";
+        } else if (msg.contains("500") || msg.contains("INTERNAL")) {
+            userMsg = "AI 서비스 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        } else {
+            userMsg = "AI 서비스 응답에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+        return "보고서 생성에 실패했습니다.\n\n" + userMsg + "\n\n문제가 계속되면 관리자에게 문의해주세요.";
     }
 
     // 일정+업무일지 데이터를 텍스트로 구성

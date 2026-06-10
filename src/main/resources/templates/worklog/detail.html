@@ -46,7 +46,11 @@
                         <div class="compare-header text-white" style="background:var(--gemini);">
                             AI 정제 결과
                         </div>
-                        <div class="compare-body" th:if="${worklog.refinedContent != null}" th:text="${worklog.refinedContent}">정제 내용</div>
+                        <!-- 정제 결과 — 카드/배지 렌더링 (원본 텍스트는 hidden 영역에 보존) -->
+                        <div class="compare-body" th:if="${worklog.refinedContent != null}" style="background:#fafbfc;">
+                            <div id="worklogRefinedRaw" style="display:none;" th:text="${worklog.refinedContent}">정제 내용</div>
+                            <div id="worklogRefinedRendered"></div>
+                        </div>
                         <div class="compare-body text-muted" th:if="${worklog.refinedContent == null}">
                             <span th:if="${worklog.status == 'RAW'}">아직 AI 정제가 요청되지 않았습니다.</span>
                             <span th:if="${worklog.status == 'PROCESSING'}">AI 정제 처리 중입니다...</span>
@@ -78,5 +82,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/ai-content-renderer.js}"></script>
+<script>
+    // AI 정제 결과 텍스트를 카드 UI 로 변환
+    (function () {
+        var raw = document.getElementById('worklogRefinedRaw');
+        if (raw) SmartLogAi.renderTo('worklogRefinedRendered', raw.textContent);
+    })();
+</script>
 </body>
 </html>

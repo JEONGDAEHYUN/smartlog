@@ -97,6 +97,32 @@
                             <div class="text-danger small mt-1"
                                  th:if="${#fields.hasErrors('orgName')}" th:errors="*{orgName}"></div>
                         </div>
+                        <!-- 권한 선택 (ROLE_USER / ROLE_ADMIN) -->
+                        <div class="col-12 mb-3">
+                            <label class="form-label small fw-semibold">
+                                권한 <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check flex-grow-1 p-3 border rounded"
+                                     style="cursor:pointer;">
+                                    <input class="form-check-input" type="radio" name="userRole"
+                                           id="roleUser" value="ROLE_USER" th:field="*{userRole}">
+                                    <label class="form-check-label w-100" for="roleUser" style="cursor:pointer;">
+                                        <div class="fw-bold small">ROLE_USER</div>
+                                        <div class="text-muted" style="font-size:11px;">일반 사용자 — 본인 일정/일지 관리</div>
+                                    </label>
+                                </div>
+                                <div class="form-check flex-grow-1 p-3 border rounded"
+                                     style="cursor:pointer;">
+                                    <input class="form-check-input" type="radio" name="userRole"
+                                           id="roleAdmin" value="ROLE_ADMIN" th:field="*{userRole}">
+                                    <label class="form-check-label w-100" for="roleAdmin" style="cursor:pointer;">
+                                        <div class="fw-bold small" style="color:#b7770d;">ROLE_ADMIN</div>
+                                        <div class="text-muted" style="font-size:11px;">관리자 — 전체 시스템 접근</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 버튼 -->

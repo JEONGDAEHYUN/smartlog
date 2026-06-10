@@ -30,9 +30,18 @@
                     <span class="badge bg-secondary-subtle text-secondary small ms-2"
                           id="reportCount"
                           th:text="${#lists.size(reports)} + '건'">0건</span>
+                    <span class="badge bg-info-subtle text-info small ms-1" id="selectedCount" style="display:none;">선택 0건</span>
                 </div>
-                <a th:href="@{/report/create}" class="btn btn-sm text-white" style="background:var(--n6);">새 보고서 생성</a>
+                <div class="d-flex gap-2">
+                    <!-- 선택 삭제 버튼 — 체크박스 선택 시 활성화 -->
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="deleteSelectedBtn"
+                            onclick="deleteSelectedReports()" disabled>선택 삭제</button>
+                    <a th:href="@{/report/create}" class="btn btn-sm text-white" style="background:var(--n6);">새 보고서 생성</a>
+                </div>
             </div>
+
+            <!-- 다중 삭제용 hidden form (체크된 repId 들을 모아 POST) -->
+            <form id="multiDeleteForm" th:action="@{/report/delete-multiple}" method="post" style="display:none;"></form>
 
             <!-- 검색 / 기간 필터 (클라이언트 사이드 필터링) -->
             <div class="card border mb-3">
@@ -60,6 +69,10 @@
                     <table class="table table-hover mb-0 small">
                         <thead class="table-light">
                             <tr>
+                                <th style="width:38px;">
+                                    <!-- 전체 선택 체크박스 -->
+                                    <input type="checkbox" id="checkAllReports" onchange="toggleAllReports()">
+                                </th>
                                 <th>보고서 제목</th>
                                 <th>내용 (요약)</th>
                                 <th>생성일</th>
@@ -68,11 +81,16 @@
                         </thead>
                         <tbody id="reportTbody">
                             <tr th:if="${#lists.isEmpty(reports)}">
-                                <td colspan="4" class="text-center text-muted py-4">생성된 보고서가 없습니다.</td>
+                                <td colspan="5" class="text-center text-muted py-4">생성된 보고서가 없습니다.</td>
                             </tr>
                             <tr th:each="rep : ${reports}" class="report-row"
                                 th:data-title="${rep.repTitle}"
                                 th:data-regdt="${#temporals.format(rep.regDt, 'yyyy-MM-dd')}">
+                                <td>
+                                    <!-- 개별 선택 체크박스 -->
+                                    <input type="checkbox" class="report-checkbox"
+                                           th:value="${rep.repId}" onchange="updateSelectedCount()">
+                                </td>
                                 <td>
                                     <a th:href="@{/report/detail/{id}(id=${rep.repId})}"
                                        class="fw-semibold text-decoration-none" style="color:var(--n6);"
@@ -170,6 +188,60 @@
     if (startDateInput) startDateInput.addEventListener('change', () => { rpPage = 1; renderReports(); });
     if (endDateInput) endDateInput.addEventListener('change', () => { rpPage = 1; renderReports(); });
     renderReports();
+
+    // ─────────────────────────────────────────────────────────
+    // 체크박스 다중 선택 + 일괄 삭제
+    // ─────────────────────────────────────────────────────────
+
+    // 현재 화면에 보이는(필터/페이지 적용된) 체크박스만 대상으로 동작
+    function getVisibleCheckboxes() {
+        return Array.from(document.querySelectorAll('.report-row'))
+            .filter(r => r.style.display !== 'none')
+            .map(r => r.querySelector('.report-checkbox'))
+            .filter(cb => cb !== null);
+    }
+
+    // 전체 선택 토글
+    function toggleAllReports() {
+        const checked = document.getElementById('checkAllReports').checked;
+        getVisibleCheckboxes().forEach(cb => { cb.checked = checked; });
+        updateSelectedCount();
+    }
+
+    // 선택 개수 → 뱃지/버튼 활성화 갱신
+    function updateSelectedCount() {
+        const selected = document.querySelectorAll('.report-checkbox:checked');
+        const badge = document.getElementById('selectedCount');
+        const btn = document.getElementById('deleteSelectedBtn');
+        if (selected.length > 0) {
+            badge.textContent = '선택 ' + selected.length + '건';
+            badge.style.display = '';
+            btn.disabled = false;
+        } else {
+            badge.style.display = 'none';
+            btn.disabled = true;
+        }
+    }
+
+    // 선택된 보고서 일괄 삭제 — hidden form 에 repIds 채워서 POST
+    function deleteSelectedReports() {
+        const selected = Array.from(document.querySelectorAll('.report-checkbox:checked'));
+        if (selected.length === 0) return;
+        if (!confirm(selected.length + '건의 보고서를 삭제하시겠습니까?')) return;
+
+        const form = document.getElementById('multiDeleteForm');
+        form.innerHTML = '';
+        // CSRF 토큰 자동 삽입은 Thymeleaf 가 처리 — th:action 으로 만든 multiDeleteForm 에 이미 _csrf hidden 있음
+        // 그대로 두고 repIds 만 추가
+        selected.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'repIds';
+            input.value = cb.value;
+            form.appendChild(input);
+        });
+        form.submit();
+    }
 </script>
 </body>
 </html>

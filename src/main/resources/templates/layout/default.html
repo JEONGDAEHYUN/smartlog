@@ -53,7 +53,9 @@
     <div class="sidebar d-none d-lg-block">
         <div class="text-center py-3 border-bottom" style="border-color: #164070 !important;">
             <div class="text-white fw-bold small" sec:authentication="name">사용자</div>
-            <div style="font-size:10px; color:var(--n4);">ROLE_USER</div>
+            <!-- 권한 동적 표시 — 관리자는 강조 색, 일반 사용자는 기본 -->
+            <div sec:authorize="hasRole('ADMIN')" style="font-size:10px; color:#ffb84d; font-weight:600;">ROLE_ADMIN</div>
+            <div sec:authorize="hasRole('USER')" style="font-size:10px; color:var(--n4);">ROLE_USER</div>
         </div>
         <nav class="nav flex-column pt-2">
             <div class="nav-label">통합 관제</div>

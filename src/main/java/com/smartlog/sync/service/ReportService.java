@@ -9,8 +9,12 @@ import java.util.List;
 // 보고서 관련 비즈니스 로직 인터페이스
 public interface ReportService {
 
-    // AI 보고서 생성 (DTO 반환) — direct 종류는 customTitle 을 보고서 제목으로 사용
-    ReportInfoDto generate(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle);
+    // AI 보고서 미리보기 생성 — Gemini 호출만, DB INSERT 하지 않음 (repId=null)
+    // 사용자가 "저장" 버튼을 명시적으로 누르기 전까지는 DB 에 들어가지 않는다
+    ReportInfoDto generatePreview(UserInfo user, String reportType, LocalDate startDate, LocalDate endDate, String customTitle);
+
+    // 미리보기 결과를 DB 에 영구 저장 — repId 가 있는 DTO 반환
+    ReportInfoDto savePreview(UserInfo user, ReportInfoDto preview);
 
     // 사용자의 보고서 목록 조회 (DTO 반환)
     List<ReportInfoDto> getByUserId(Long userId);

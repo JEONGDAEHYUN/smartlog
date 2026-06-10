@@ -58,6 +58,18 @@
                             </div>
                         </div>
 
+                        <!-- 빠른 기간 선택 버튼 그룹 -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">빠른 선택</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setQuickRange('thisWeek')">이번 주</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setQuickRange('thisMonth')">이번 달</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setQuickRange('lastMonth')">지난 달</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setQuickRange('last7')">최근 7일</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setQuickRange('last30')">최근 30일</button>
+                            </div>
+                        </div>
+
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label for="startDate" class="form-label small fw-semibold">
@@ -146,6 +158,50 @@
             customTitleInput.required = false;
             customTitleInput.value = '';
         }
+    }
+
+    // 빠른 기간 선택 — 시작/종료일 input 에 일괄 입력
+    function setQuickRange(preset) {
+        const today = new Date();
+        const todayStr = toIsoDate(today);
+        let start, end;
+
+        if (preset === 'thisWeek') {
+            // 이번 주 (월요일 ~ 일요일)
+            const day = today.getDay();                  // 0(일) ~ 6(토)
+            const diffToMonday = (day === 0 ? -6 : 1 - day);
+            const monday = new Date(today);
+            monday.setDate(today.getDate() + diffToMonday);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            start = toIsoDate(monday);
+            end = toIsoDate(sunday);
+        } else if (preset === 'thisMonth') {
+            // 이번 달 1일 ~ 말일
+            start = toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1));
+            end   = toIsoDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+        } else if (preset === 'lastMonth') {
+            // 지난 달 1일 ~ 말일
+            start = toIsoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+            end   = toIsoDate(new Date(today.getFullYear(), today.getMonth(), 0));
+        } else if (preset === 'last7') {
+            const d = new Date(today); d.setDate(today.getDate() - 6);
+            start = toIsoDate(d); end = todayStr;
+        } else if (preset === 'last30') {
+            const d = new Date(today); d.setDate(today.getDate() - 29);
+            start = toIsoDate(d); end = todayStr;
+        }
+
+        document.getElementById('startDate').value = start;
+        document.getElementById('endDate').value = end;
+    }
+
+    // Date → YYYY-MM-DD (로컬 타임존 기준 — toISOString 의 UTC 변환 오차 방지)
+    function toIsoDate(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return yyyy + '-' + mm + '-' + dd;
     }
 
     // 페이지 로드 시 기본 기간 설정

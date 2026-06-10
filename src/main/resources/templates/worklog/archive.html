@@ -137,36 +137,77 @@
                     </table>
                 </div>
             </div>
+
+            <!-- 페이지네이션 -->
+            <nav class="d-flex justify-content-center mt-3">
+                <ul class="pagination pagination-sm mb-0" id="archivePagination"></ul>
+            </nav>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 검색 필터 (키워드 + 상태 + 기간)
-    function filterTable() {
+    // 검색 + 상태 + 기간 필터 + 페이지네이션 (페이지당 10개)
+    const ARC_PAGE_SIZE = 10;
+    let arcPage = 1;
+    const arcRows = Array.from(document.querySelectorAll('.archive-row'));
+    const arcPagination = document.getElementById('archivePagination');
+
+    function getFilteredArchive() {
         const keyword = document.getElementById('searchInput').value.toLowerCase();
         const status = document.getElementById('statusFilter').value;
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
-        const rows = document.querySelectorAll('.archive-row');
-
-        rows.forEach(row => {
+        return arcRows.filter(row => {
             const raw = (row.dataset.raw || '').toLowerCase();
             const rowStatus = row.dataset.status || '';
             const rowDate = row.dataset.date || '';
-            const matchKeyword = !keyword || raw.includes(keyword);
-            const matchStatus = !status || rowStatus === status;
-            const matchStart = !startDate || rowDate >= startDate;
-            const matchEnd = !endDate || rowDate <= endDate;
-            row.style.display = (matchKeyword && matchStatus && matchStart && matchEnd) ? '' : 'none';
+            return (!keyword || raw.includes(keyword))
+                && (!status || rowStatus === status)
+                && (!startDate || rowDate >= startDate)
+                && (!endDate || rowDate <= endDate);
         });
     }
 
-    // 엔터키로 검색
-    document.getElementById('searchInput').addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') filterTable();
-    });
+    function renderArchive() {
+        const filtered = getFilteredArchive();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / ARC_PAGE_SIZE));
+        if (arcPage > totalPages) arcPage = totalPages;
+
+        arcRows.forEach(r => r.style.display = 'none');
+        const start = (arcPage - 1) * ARC_PAGE_SIZE;
+        filtered.slice(start, start + ARC_PAGE_SIZE).forEach(r => r.style.display = '');
+
+        let html = '';
+        html += '<li class="page-item ' + (arcPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (arcPage - 1) + '">이전</a></li>';
+        for (let i = 1; i <= totalPages; i++) {
+            html += '<li class="page-item ' + (i === arcPage ? 'active' : '') + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        }
+        html += '<li class="page-item ' + (arcPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (arcPage + 1) + '">다음</a></li>';
+        arcPagination.innerHTML = html;
+
+        arcPagination.querySelectorAll('a.page-link').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const p = parseInt(a.dataset.page);
+                if (p >= 1 && p <= totalPages) { arcPage = p; renderArchive(); }
+            });
+        });
+    }
+
+    // 기존 filterTable() 호환 + 페이지 1로 리셋
+    function filterTable() {
+        arcPage = 1;
+        renderArchive();
+    }
+
+    // 입력 즉시 반응
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    document.getElementById('startDate').addEventListener('change', filterTable);
+    document.getElementById('endDate').addEventListener('change', filterTable);
+    renderArchive();
 </script>
 </body>
 </html>

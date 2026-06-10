@@ -80,20 +80,59 @@
     </div>
 </div>
 
+<!-- 페이지네이션 -->
+<nav class="d-flex justify-content-center mt-3 pb-3">
+    <ul class="pagination pagination-sm mb-0" id="notiPagination"></ul>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 알림 키워드 검색 (클라이언트 사이드 필터링)
-    const searchInput = document.getElementById('notiSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function () {
-            const keyword = this.value.trim().toLowerCase();
-            document.querySelectorAll('.noti-item').forEach(item => {
-                const msgEl = item.querySelector('.flex-grow-1 .small');
-                const msg = msgEl ? msgEl.textContent.toLowerCase() : '';
-                item.style.display = (keyword === '' || msg.includes(keyword)) ? '' : 'none';
+    // 알림 키워드 검색 + 페이지네이션 (페이지당 10개)
+    const NOTI_PAGE_SIZE = 10;
+    let notiPage = 1;
+    const notiItems = Array.from(document.querySelectorAll('.noti-item'));
+    const notiSearchInput = document.getElementById('notiSearchInput');
+    const notiPagination = document.getElementById('notiPagination');
+
+    function getFilteredNoti() {
+        const keyword = (notiSearchInput.value || '').trim().toLowerCase();
+        return notiItems.filter(item => {
+            const msgEl = item.querySelector('.flex-grow-1 .small');
+            const msg = msgEl ? msgEl.textContent.toLowerCase() : '';
+            return keyword === '' || msg.includes(keyword);
+        });
+    }
+
+    function renderNoti() {
+        const filtered = getFilteredNoti();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / NOTI_PAGE_SIZE));
+        if (notiPage > totalPages) notiPage = totalPages;
+
+        notiItems.forEach(i => i.style.display = 'none');
+        const start = (notiPage - 1) * NOTI_PAGE_SIZE;
+        filtered.slice(start, start + NOTI_PAGE_SIZE).forEach(i => i.style.display = '');
+
+        let html = '';
+        html += '<li class="page-item ' + (notiPage === 1 ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (notiPage - 1) + '">이전</a></li>';
+        for (let i = 1; i <= totalPages; i++) {
+            html += '<li class="page-item ' + (i === notiPage ? 'active' : '') + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        }
+        html += '<li class="page-item ' + (notiPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (notiPage + 1) + '">다음</a></li>';
+        notiPagination.innerHTML = html;
+
+        notiPagination.querySelectorAll('a.page-link').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const p = parseInt(a.dataset.page);
+                if (p >= 1 && p <= totalPages) { notiPage = p; renderNoti(); }
             });
         });
     }
+
+    if (notiSearchInput) {
+        notiSearchInput.addEventListener('keyup', () => { notiPage = 1; renderNoti(); });
+    }
+    renderNoti();
 </script>
 </body>
 </html>
