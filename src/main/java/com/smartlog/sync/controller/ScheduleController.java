@@ -233,6 +233,31 @@ public class ScheduleController {
         return Map.of("success", true, "completed", completed);
     }
 
+    // 일정 다중 삭제 API (주간/일간/월간 캘린더의 체크박스·행 삭제에서 호출)
+    // — 반복 일정 삭제 시 그 일정의 모든 회차가 사라짐(원본 1건 삭제)
+    @PostMapping("/api/delete")
+    @ResponseBody
+    public Map<String, Object> apiDelete(@AuthenticationPrincipal UserDetails userDetails,
+                                         @RequestParam(value = "schIds", required = false) List<Long> schIds) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return Map.of("success", false, "error", "unauthorized");
+        if (schIds == null || schIds.isEmpty()) return Map.of("success", true, "deleted", 0);
+
+        // 본인 일정만 삭제 (소유권 검증) — 남의 일정 ID가 섞여 와도 무시
+        java.util.Set<Long> ownIds = scheduleService.getByUserId(user.getUserId()).stream()
+                .map(SchInfoDto::schId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        int deleted = 0;
+        for (Long id : schIds) {
+            if (id != null && ownIds.contains(id)) {
+                scheduleService.delete(id);
+                deleted++;
+            }
+        }
+        return Map.of("success", true, "deleted", deleted);
+    }
+
     private Map<String, Object> toEventMap(SchInfoDto sch, java.time.LocalDateTime start, java.time.LocalDateTime end, String status) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", sch.schId());

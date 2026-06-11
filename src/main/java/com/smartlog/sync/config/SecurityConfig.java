@@ -36,7 +36,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/schedule/api/**")
             )
-            // 접근 권한 설정
+            // 접근 권한 설정 , 인가 규칙
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/signup", "/signup/verify", "/find-id", "/find-pw", "/find-pw/**", "/css/**", "/js/**", "/images/**").permitAll()
                 .anyRequest().authenticated()
@@ -63,8 +63,8 @@ public class SecurityConfig {
             )
             // 로그인 상태 유지 (Persistent Token 방식 — persistent_logins 테이블에 토큰 저장 + 회전)
             .rememberMe(rm -> rm
-                .tokenRepository(tokenRepository)
-                .userDetailsService(userDetailsService)
+                .tokenRepository(tokenRepository)       // 토큰을 DB에 저장하는 저장소
+                .userDetailsService(userDetailsService) // 자동 로그인 시 사용자 재조회
                 .tokenValiditySeconds(60 * 60 * 24)        // 1일
                 .rememberMeParameter("remember-me")        // 폼 체크박스 name 과 일치
                 .rememberMeCookieName("remember-me")       // 발급되는 쿠키 이름

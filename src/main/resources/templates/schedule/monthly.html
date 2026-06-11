@@ -208,11 +208,13 @@ function showDayDetail(dateStr, dayEvents) {
     if (dayEvents.length === 0) {
         body.innerHTML = '<div class="text-muted small">해당 날짜에 등록된 일정이 없습니다.</div>';
     } else {
-        let html = '<table class="table table-sm small mb-0"><thead class="table-light"><tr><th>일정 제목</th><th>시작</th><th>우선순위</th><th>상태</th><th>관리</th></tr></thead><tbody>';
+        let html = '<div class="d-flex justify-content-end mb-2"><button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedDay()">선택 삭제</button></div>';
+        html += '<table class="table table-sm small mb-0"><thead class="table-light"><tr><th style="width:32px;"><input type="checkbox" id="checkAllDay" onclick="toggleAllDay(this)" title="전체 선택"></th><th>일정 제목</th><th>시작</th><th>우선순위</th><th>상태</th><th>관리</th></tr></thead><tbody>';
         dayEvents.forEach(ev => {
             const prCls = ev.priority === 'HIGH' ? 'bg-danger-subtle text-danger' : (ev.priority === 'MID' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success');
             const stCls = ev.status === 'DONE' ? 'bg-secondary-subtle text-secondary' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
-            html += '<tr><td class="fw-semibold">' + ev.title + '</td>';
+            html += '<tr><td><input type="checkbox" class="day-check" value="' + ev.id + '" data-recurring="' + (ev.recurring ? 'true' : 'false') + '"></td>';
+            html += '<td class="fw-semibold">' + ev.title + '</td>';
             html += '<td class="text-muted">' + (ev.start ? ev.start.substring(11, 16) : '-') + '</td>';
             html += '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>';
             html += '<td><span class="badge ' + stCls + '">' + ev.status + '</span></td>';
@@ -224,13 +226,51 @@ function showDayDetail(dateStr, dayEvents) {
                 const btnCls = isDone ? 'btn-outline-secondary' : 'btn-success';
                 actionHtml += '<button type="button" class="btn btn-sm py-0 px-2 me-1 ' + btnCls + '" style="font-size:10px;" onclick="toggleComplete(' + ev.id + ', \'' + dateStr + '\')">' + btnLabel + '</button>';
             }
-            actionHtml += '<a href="/schedule/edit/' + ev.id + '?from=monthly" class="btn btn-sm py-0 px-2 text-white" style="font-size:10px;background:var(--n6);">수정</a>';
+            actionHtml += '<a href="/schedule/edit/' + ev.id + '?from=monthly" class="btn btn-sm py-0 px-2 text-white me-1" style="font-size:10px;background:var(--n6);">수정</a>';
+            actionHtml += '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:10px;" onclick="deleteOneSchedule(' + ev.id + ', ' + (ev.recurring ? 'true' : 'false') + ')">삭제</button>';
             html += '<td>' + actionHtml + '</td></tr>';
         });
         html += '</tbody></table>';
         body.innerHTML = html;
     }
     detail.style.display = 'block';
+}
+
+// 체크박스 전체 선택/해제 (날짜 상세)
+function toggleAllDay(src) {
+    document.querySelectorAll('.day-check').forEach(c => { c.checked = src.checked; });
+}
+
+// 선택 삭제 — 체크된 일정 일괄 삭제
+async function deleteSelectedDay() {
+    const checks = Array.from(document.querySelectorAll('.day-check:checked'));
+    if (checks.length === 0) { alert('삭제할 일정을 선택하세요.'); return; }
+    const ids = [...new Set(checks.map(c => c.value))];
+    const hasRecurring = checks.some(c => c.dataset.recurring === 'true');
+    let msg = '선택한 ' + ids.length + '개 일정을 삭제하시겠습니까?';
+    if (hasRecurring) msg += '\n\n⚠ 반복 일정은 모든 회차가 함께 삭제됩니다.';
+    if (!confirm(msg)) return;
+    await deleteScheduleIds(ids);
+}
+
+// 행 단위 삭제
+async function deleteOneSchedule(schId, recurring) {
+    let msg = '이 일정을 삭제하시겠습니까?';
+    if (recurring) msg += '\n\n⚠ 반복 일정은 모든 회차가 함께 삭제됩니다.';
+    if (!confirm(msg)) return;
+    await deleteScheduleIds([schId]);
+}
+
+// 삭제 API 호출 (CSRF 예외 경로 /schedule/api/**)
+async function deleteScheduleIds(ids) {
+    const fd = new FormData();
+    ids.forEach(id => fd.append('schIds', id));
+    try {
+        const res = await fetch('/schedule/api/delete', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) { location.reload(); }
+        else { alert('삭제 실패: ' + (data.error || '알 수 없는 오류')); }
+    } catch (e) { alert('삭제 실패: ' + e.message); }
 }
 
 // 반복 일정 완료 토글 — 그 날짜만 DONE 처리

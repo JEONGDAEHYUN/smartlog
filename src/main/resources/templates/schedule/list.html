@@ -84,7 +84,10 @@
                     <span class="badge bg-secondary-subtle text-secondary small ms-2"
                           id="listVisibleCount">0건</span>
                 </div>
-                <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">일정 등록</a>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSelectedList()">선택 삭제</button>
+                    <a th:href="@{/schedule/create}" class="btn btn-sm text-white" style="background:var(--n6);">일정 등록</a>
+                </div>
             </div>
 
             <!-- 검색 + 기간 필터 -->
@@ -113,6 +116,7 @@
                     <table class="table table-hover mb-0 small">
                         <thead class="table-light">
                             <tr>
+                                <th style="width:34px;"><input type="checkbox" id="checkAllList" onclick="toggleAllList(this)" title="전체 선택"></th>
                                 <th>일정 제목</th>
                                 <th>시작 일시</th>
                                 <th>종료 일시</th>
@@ -123,11 +127,12 @@
                         </thead>
                         <tbody id="listTbody">
                             <tr th:if="${#lists.isEmpty(schedules)}">
-                                <td colspan="6" class="text-center text-muted py-4">등록된 일정이 없습니다.</td>
+                                <td colspan="7" class="text-center text-muted py-4">등록된 일정이 없습니다.</td>
                             </tr>
                             <tr th:each="sch : ${schedules}" class="list-row"
                                 th:data-title="${sch.schTitle}"
                                 th:data-startdt="${#temporals.format(sch.startDt, 'yyyy-MM-dd')}">
+                                <td><input type="checkbox" class="list-check" th:value="${sch.schId}" th:attr="data-recurring=${sch.recurring != null}"></td>
                                 <td class="fw-semibold" th:classappend="${sch.status == 'DONE'} ? 'text-decoration-line-through text-muted'" th:text="${sch.schTitle}">제목</td>
                                 <td class="text-muted" th:text="${#temporals.format(sch.startDt, 'MM/dd HH:mm')}">날짜</td>
                                 <td class="text-muted" th:text="${sch.endDt != null ? #temporals.format(sch.endDt, 'MM/dd HH:mm') : '-'}">날짜</td>
@@ -247,6 +252,34 @@
     if (startDateInput) startDateInput.addEventListener('change', () => { currentPage = 1; render(); });
     if (endDateInput) endDateInput.addEventListener('change', () => { currentPage = 1; render(); });
     render();
+
+    // ── 체크박스 다중 삭제 ──
+    // 전체 선택/해제
+    function toggleAllList(src) {
+        document.querySelectorAll('.list-check').forEach(c => { c.checked = src.checked; });
+    }
+    window.toggleAllList = toggleAllList;
+
+    // 선택 삭제 — 체크된 일정 일괄 삭제 (CSRF 예외 경로 /schedule/api/**)
+    async function deleteSelectedList() {
+        const checks = Array.from(document.querySelectorAll('.list-check:checked'));
+        if (checks.length === 0) { alert('삭제할 일정을 선택하세요.'); return; }
+        const ids = [...new Set(checks.map(c => c.value))];
+        const hasRecurring = checks.some(c => c.dataset.recurring === 'true');
+        let msg = '선택한 ' + ids.length + '개 일정을 삭제하시겠습니까?';
+        if (hasRecurring) msg += '\n\n⚠ 반복 일정은 모든 회차가 함께 삭제됩니다.';
+        if (!confirm(msg)) return;
+
+        const fd = new FormData();
+        ids.forEach(id => fd.append('schIds', id));
+        try {
+            const res = await fetch('/schedule/api/delete', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) { location.reload(); }
+            else { alert('삭제 실패: ' + (data.error || '알 수 없는 오류')); }
+        } catch (e) { alert('삭제 실패: ' + e.message); }
+    }
+    window.deleteSelectedList = deleteSelectedList;
 </script>
 </body>
 </html>
