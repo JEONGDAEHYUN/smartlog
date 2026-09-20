@@ -11,8 +11,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class PasswordConfig {
 
+    // 이 메서드 반환값을(비밀번호) 스프링이 관리하는 빈으로 등록
+    // [사전질문 Security 12] PasswordEncoder 역할 = encode(암호화)/matches(검증) 제공
+    // [사전질문 Security 13] BCrypt 복호화 가능? → 불가(단방향), salt 포함 매번 다른 해시 → matches로만 비교
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder() { // PasswordEncoder 타입 빈을  만드는 메서드
+        return new BCryptPasswordEncoder();    // BCrypt는 hash-256과 다름 자동으로 salt 해서 매번 다른 해시값 나옴
     }
 }

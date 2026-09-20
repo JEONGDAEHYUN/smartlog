@@ -47,6 +47,7 @@
                 <div th:if="${error}" class="alert alert-danger small py-2" th:text="${error}"></div>
 
                 <!-- 회원가입 폼 -->
+
                 <form th:action="@{/signup}" th:object="${signupDto}" method="post">
                     <div class="row">
                         <!-- 이메일 -->
@@ -68,6 +69,13 @@
                                    placeholder="8자 이상" required>
                             <div class="text-danger small mt-1"
                                  th:if="${#fields.hasErrors('userPwd')}" th:errors="*{userPwd}"></div>
+                            <!-- 실시간 검증 체크리스트 (JS) -->
+                            <ul id="pwdChecklist" class="list-unstyled small mt-1 mb-0 d-none">
+                                <li data-rule="len" class="pwd-rule text-muted">○ 8자 이상</li>
+                                <li data-rule="alpha" class="pwd-rule text-muted">○ 영문 포함</li>
+                                <li data-rule="digit" class="pwd-rule text-muted">○ 숫자 포함</li>
+                                <li data-rule="special" class="pwd-rule text-muted">○ 특수문자(!@#$%^&amp;*) 포함</li>
+                            </ul>
                         </div>
                         <!-- 비밀번호 확인 -->
                         <div class="col-md-6 mb-3">
@@ -75,7 +83,15 @@
                                 비밀번호 확인 <span class="text-danger">*</span>
                             </label>
                             <input type="password" class="form-control" id="userPwdConfirm"
-                                   placeholder="비밀번호 재입력" required>
+                                   th:field="*{userPwdConfirm}" placeholder="비밀번호 재입력" required>
+                            <!-- 빈값 에러(@NotBlank) -->
+                            <div class="text-danger small mt-1"
+                                 th:if="${#fields.hasErrors('userPwdConfirm')}" th:errors="*{userPwdConfirm}"></div>
+                            <!-- 불일치 에러(@AssertTrue isPasswordMatched) -->
+                            <div class="text-danger small mt-1"
+                                 th:if="${#fields.hasErrors('passwordMatched')}" th:errors="*{passwordMatched}"></div>
+                            <!-- 실시간 일치 여부 (JS) -->
+                            <div id="pwdMatchMsg" class="small mt-1 d-none"></div>
                         </div>
                         <!-- 이름 -->
                         <div class="col-md-6 mb-3">
@@ -139,5 +155,62 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 비밀번호 실시간 검증 (서버 @Pattern 규칙과 동일) -->
+<script>
+(function () {
+    const pwd        = document.getElementById('userPwd');
+    const confirm    = document.getElementById('userPwdConfirm');
+    const checklist  = document.getElementById('pwdChecklist');
+    const matchMsg   = document.getElementById('pwdMatchMsg');
+    const submitBtn  = document.querySelector('button[type="submit"]');
+
+    // 서버 정규식과 동일한 조건들 (SignupDto @Pattern)
+    const rules = {
+        len:     v => v.length >= 8,
+        alpha:   v => /[A-Za-z]/.test(v),
+        digit:   v => /\d/.test(v),
+        special: v => /[!@#$%^&*]/.test(v)
+    };
+
+    // 각 규칙 통과 여부를 체크리스트에 ✓/○ 로 표시
+    function checkPwd() {
+        const v = pwd.value;
+        checklist.classList.toggle('d-none', v.length === 0);
+        let allPass = true;
+        checklist.querySelectorAll('.pwd-rule').forEach(li => {
+            const ok = rules[li.dataset.rule](v);
+            if (!ok) allPass = false;
+            li.textContent = (ok ? '✓ ' : '○ ') + li.textContent.slice(2);
+            li.classList.toggle('text-success', ok);
+            li.classList.toggle('text-muted', !ok);
+        });
+        return allPass;
+    }
+
+    // 비밀번호 ↔ 확인 일치 여부 실시간 표시
+    function checkMatch() {
+        if (confirm.value.length === 0) {
+            matchMsg.classList.add('d-none');
+            return false;
+        }
+        matchMsg.classList.remove('d-none');
+        const matched = pwd.value === confirm.value;
+        matchMsg.textContent = matched ? '✓ 비밀번호가 일치합니다' : '○ 비밀번호가 일치하지 않습니다';
+        matchMsg.classList.toggle('text-success', matched);
+        matchMsg.classList.toggle('text-danger', !matched);
+        return matched;
+    }
+
+    // 모든 조건 충족 시에만 제출 버튼 활성화
+    function refresh() {
+        const pwdOk   = checkPwd();
+        const matchOk = checkMatch();
+        submitBtn.disabled = !(pwdOk && matchOk);
+    }
+
+    pwd.addEventListener('input', refresh);
+    confirm.addEventListener('input', refresh);
+})();
+</script>
 </body>
 </html>
