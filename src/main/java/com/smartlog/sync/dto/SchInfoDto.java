@@ -18,6 +18,7 @@ public record SchInfoDto(
         String status,
         String recurring,
         String schMemo,
+        String emailNotiYn,
         LocalDateTime regDt
 ) {
     // Entity → DTO 변환 (Builder 패턴 일관 적용)
@@ -33,6 +34,7 @@ public record SchInfoDto(
                 .status(entity.getStatus())
                 .recurring(entity.getRecurring())
                 .schMemo(entity.getSchMemo())
+                .emailNotiYn(entity.getEmailNotiYn() != null ? entity.getEmailNotiYn() : "N")
                 .regDt(entity.getRegDt())
                 .build();
     }
