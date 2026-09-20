@@ -4,11 +4,13 @@ import com.smartlog.sync.repository.entity.NotiInfo;
 import com.smartlog.sync.repository.entity.SchInfo;
 import com.smartlog.sync.repository.NotiInfoRepository;
 import com.smartlog.sync.repository.SchInfoRepository;
+import com.smartlog.sync.service.EmailNotificationService;
 import com.smartlog.sync.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +23,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotiInfoRepository notiInfoRepository;
     private final SchInfoRepository schInfoRepository;
+    private final EmailNotificationService emailNotificationService;
 
     // 매일 자정(00:01)에 반복 업무의 DONE → PLANNED 자동 해제
     @Scheduled(cron = "0 1 0 * * *")
@@ -77,8 +80,8 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     // 매 20초마다 발송 대기 알림 체크 → 발송 + 다음 단계 알림 생성
-    // (기존 60초 → 20초로 단축: 발송 기준 시각 경과 후 화면 반영 지연을 최대 20초로 축소)
     @Scheduled(fixedRate = 20000)
+    @Transactional  // LAZY 연관(schInfo, userInfo) 접근을 위해 트랜잭션 유지
     public void checkAndSendNotifications() {
         List<NotiInfo> pendingList = notiInfoRepository.findByIsSent("N");
         LocalDateTime now = LocalDateTime.now();
@@ -87,7 +90,15 @@ public class NotificationServiceImpl implements NotificationService {
             if (noti.getNotiDt().isBefore(now) || noti.getNotiDt().isEqual(now)) {
                 noti.markAsSent(now);
                 notiInfoRepository.save(noti);
-                log.info("[알림 발송] notiId={}, msg={}", noti.getNotiId(), noti.getNotiMsg());
+
+                String emailNotiYn = noti.getSchInfo().getEmailNotiYn();
+                String toEmail    = noti.getUserInfo().getUserEmail();
+                log.info("[알림 발송] notiId={}, msg={}, emailNotiYn={}, to={}",
+                        noti.getNotiId(), noti.getNotiMsg(), emailNotiYn, toEmail);
+
+                if ("Y".equals(emailNotiYn)) {
+                    emailNotificationService.sendNotiEmail(toEmail, noti.getNotiMsg());
+                }
 
                 createNextNotification(noti);
             }

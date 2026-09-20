@@ -133,6 +133,13 @@
                                         <span id="pwStrengthLabel" class="small text-muted">비밀번호를 입력하세요</span>
                                         <span id="pwReqHint" class="small text-muted" style="font-size:11px;">영문·숫자·특수문자(!@#$%^&amp;*)·8자↑</span>
                                     </div>
+                                    <!-- 실시간 검증 체크리스트 (서버 @Pattern 규칙과 동일) -->
+                                    <ul id="pwdChecklist" class="list-unstyled small mt-2 mb-0 d-none">
+                                        <li data-rule="len" class="pwd-rule text-muted">○ 8자 이상</li>
+                                        <li data-rule="alpha" class="pwd-rule text-muted">○ 영문 포함</li>
+                                        <li data-rule="digit" class="pwd-rule text-muted">○ 숫자 포함</li>
+                                        <li data-rule="special" class="pwd-rule text-muted">○ 특수문자(!@#$%^&amp;*) 포함</li>
+                                    </ul>
                                 </div>
                                 <div class="mb-3">
                                     <label for="confirmPassword" class="form-label small fw-semibold">
@@ -166,7 +173,32 @@
         var bar = document.getElementById('pwStrengthBar');
         var label = document.getElementById('pwStrengthLabel');
         var matchMsg = document.getElementById('pwMatchMsg');
+        var checklist = document.getElementById('pwdChecklist');
+        var submitBtn = pw && pw.form ? pw.form.querySelector('button[type="submit"]') : null;
         if (!pw) return;
+
+        // 서버 정규식과 동일한 조건들 (PasswordChangeDto @Pattern)
+        var rules = {
+            len:     function (v) { return v.length >= 8; },
+            alpha:   function (v) { return /[A-Za-z]/.test(v); },
+            digit:   function (v) { return /\d/.test(v); },
+            special: function (v) { return /[!@#$%^&*]/.test(v); }
+        };
+
+        // 각 규칙 통과 여부를 체크리스트에 ✓/○ 로 표시 → 모두 통과 시 true
+        function renderChecklist() {
+            var v = pw.value;
+            checklist.classList.toggle('d-none', v.length === 0);
+            var allPass = true;
+            checklist.querySelectorAll('.pwd-rule').forEach(function (li) {
+                var ok = rules[li.dataset.rule](v);
+                if (!ok) allPass = false;
+                li.textContent = (ok ? '✓ ' : '○ ') + li.textContent.slice(2);
+                li.classList.toggle('text-success', ok);
+                li.classList.toggle('text-muted', !ok);
+            });
+            return allPass;
+        }
 
         // 강도 점수(0~4): 길이 + 문자 종류 다양성으로 산정
         function score(v) {
@@ -196,18 +228,28 @@
         }
 
         function renderMatch() {
-            if (!confirm.value) { matchMsg.textContent = ''; return; }
-            if (pw.value === confirm.value) {
+            if (!confirm.value) { matchMsg.textContent = ''; return false; }
+            var matched = pw.value === confirm.value;
+            if (matched) {
                 matchMsg.textContent = '✓ 비밀번호가 일치합니다';
                 matchMsg.style.color = '#1a7a4a';
             } else {
                 matchMsg.textContent = '✗ 비밀번호가 일치하지 않습니다';
                 matchMsg.style.color = '#c0392b';
             }
+            return matched;
         }
 
-        pw.addEventListener('input', function () { renderStrength(); renderMatch(); });
-        confirm.addEventListener('input', renderMatch);
+        // 모든 규칙 충족 + 확인 일치 시에만 제출 버튼 활성화
+        function refresh() {
+            renderStrength();
+            var pwdOk = renderChecklist();
+            var matchOk = renderMatch();
+            if (submitBtn) submitBtn.disabled = !(pwdOk && matchOk);
+        }
+
+        pw.addEventListener('input', refresh);
+        confirm.addEventListener('input', refresh);
     })();
 </script>
 </body>

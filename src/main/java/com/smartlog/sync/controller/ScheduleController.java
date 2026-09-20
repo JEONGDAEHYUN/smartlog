@@ -79,6 +79,7 @@ public class ScheduleController {
                 .logId(sch.logId())
                 .recurring(sch.recurring())
                 .schMemo(sch.schMemo())
+                .emailNotiYn(sch.emailNotiYn())
                 .build();
         model.addAttribute("scheduleDto", dto);
         model.addAttribute("from", from);

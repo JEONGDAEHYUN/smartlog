@@ -19,6 +19,7 @@ spring:
     hibernate:
       ddl-auto: update        # Entity 변경 시 테이블 자동 반영 (운영 환경에서는 validate 권장)
     show-sql: true             # 콘솔에 SQL 출력
+    database-platform: org.hibernate.dialect.MariaDBDialect  # Dialect 명시 (연결 실패 시 혼란스러운 에러 방지)
     properties:
       hibernate:
         format_sql: true       # SQL 포맷팅 (가독성 향상)

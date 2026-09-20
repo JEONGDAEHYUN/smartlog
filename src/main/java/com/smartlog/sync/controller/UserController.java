@@ -16,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -49,16 +50,26 @@ public class UserController {
     // 회원가입 (3단계)
     // ═══════════════════════════════════════════════════════════
 
+    // 회원가입 "화면 보여주기" — GET 요청 (실제 가입 처리는 아래 @PostMapping("/signup"))
+    //  - @GetMapping("/signup") : 주소창으로 /signup 에 들어오면(GET) 이 메서드 실행
+    //  - Model model : 컨트롤러 → 화면(뷰)으로 데이터를 전달하는 "통로" 객체
     @GetMapping("/signup")
     public String signupPage(Model model) {
+        // 빈 SignupDto를 model에 담아 화면으로 보냄
+        //  - 이유: Thymeleaf 폼이 th:object="${signupDto}" 로 이 객체에 입력값을 바인딩하기 때문
+        //  - SignupDto.empty() : 모든 필드 null + 권한 기본값(ROLE_USER)인 빈 인스턴스 (폼 초기 상태)
         model.addAttribute("signupDto", SignupDto.empty());
+        // "auth/signup" 뷰 이름 반환 → templates/auth/signup.html 을 렌더링해서 응답
         return "auth/signup";
     }
 
     // Step 1: 기본정보 제출 → 인증코드 메일 발송
+    // [사전질문 공통 5] Controller 주요 메서드 입력/출력 예 → 입력 @Valid SignupDto, 반환 뷰 이름(String)
+    // [사전질문 JPA 11] @Valid 사용처 → SignupDto 에 적용
     @PostMapping("/signup")
     public String signupStep1(@Valid @ModelAttribute SignupDto signupDto,
                               BindingResult bindingResult, Model model, HttpSession session) {
+        // [사전질문 JPA 13] 예외/검증 실패 시 메시지 반환 → BindingResult로 잡아 폼(th:errors)에 표시
         if (bindingResult.hasErrors()) {
             return "auth/signup";
         }
@@ -72,9 +83,9 @@ public class UserController {
             model.addAttribute("error", e.getMessage());
             return "auth/signup";
         }
-
+        // 임시로 입력값 보관
         session.setAttribute("SIGNUP_DTO", signupDto);
-
+        // 인증코드 만들어 메일 발송
         try {
             emailVerificationService.generateCode(session, signupDto.userEmail());
         } catch (IllegalStateException e) {
@@ -84,7 +95,7 @@ public class UserController {
 
         model.addAttribute("email", signupDto.userEmail());
         model.addAttribute("step", 2);
-        return "auth/signup-verify";
+        return "auth/signup-verify"; // 인증코드 입력화면 으로 넘어감
     }
 
     // Step 2: 인증코드 검증 → USER_INFO INSERT
@@ -97,8 +108,8 @@ public class UserController {
             return "auth/signup-verify";
         }
 
-        if (emailVerificationService.verifyCode(session, dto.userEmail(), dto.inputCode())) {
-            SignupDto signupDto = (SignupDto) session.getAttribute("SIGNUP_DTO");
+        if (emailVerificationService.verifyCode(session, dto.userEmail(), dto.inputCode())) { // 세션에 저장된 코드와 입력코드 비교
+            SignupDto signupDto = (SignupDto) session.getAttribute("SIGNUP_DTO"); // 임시 저장된 사용자 입력값 꺼냄
             if (signupDto == null) {
                 return "redirect:/signup";
             }

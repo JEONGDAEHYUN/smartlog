@@ -43,6 +43,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .logId(dto.logId())
                 .recurring(recurring)
                 .schMemo(dto.schMemo())
+                .emailNotiYn("Y".equals(dto.emailNotiYn()) ? "Y" : "N")
                 .build();
         SchInfo saved = schInfoRepository.save(sch);
         notificationService.createScheduleNotification(saved);
@@ -55,7 +56,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
         String recurring = (dto.recurring() != null && !dto.recurring().isBlank()) ? dto.recurring() : null;
         sch.update(dto.schTitle(), dto.startDt(), dto.endDt(),
-                dto.priority(), dto.status(), recurring, dto.schMemo());
+                dto.priority(), dto.status(), recurring, dto.schMemo(), dto.emailNotiYn());
         SchInfo saved = schInfoRepository.save(sch);
         notificationService.updateScheduleNotification(saved);
         return saved;

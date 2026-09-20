@@ -46,6 +46,11 @@ public class SchInfo {
     @Column(name = "SCH_MEMO", length = 500)
     private String schMemo; // 메모 (특이사항, 내일 예정 등)
 
+    @Builder.Default
+    // 이메일 알림 수신 여부 — Y: 이 일정에 대해 이메일 알림 수신, N: 수신 안 함
+    @Column(name = "EMAIL_NOTI_YN", length = 1, nullable = false, columnDefinition = "VARCHAR(1) NOT NULL DEFAULT 'N'")
+    private String emailNotiYn = "N";
+
     @Column(name = "REG_DT", nullable = false, updatable = false)
     private LocalDateTime regDt; // 등록일
 
@@ -57,7 +62,7 @@ public class SchInfo {
 
     // 일정 전체 필드 업데이트 — 수정 화면에서 호출
     public void update(String schTitle, LocalDateTime startDt, LocalDateTime endDt,
-                       String priority, String status, String recurring, String schMemo) {
+                       String priority, String status, String recurring, String schMemo, String emailNotiYn) {
         this.schTitle = schTitle;
         this.startDt = startDt;
         this.endDt = endDt;
@@ -65,6 +70,7 @@ public class SchInfo {
         this.status = status;
         this.recurring = recurring;
         this.schMemo = schMemo;
+        this.emailNotiYn = "Y".equals(emailNotiYn) ? "Y" : "N";
     }
 
     // 반복 업무 자정 초기화 — 상태만 PLANNED 로 되돌림

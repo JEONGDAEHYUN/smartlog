@@ -30,15 +30,17 @@ public record ScheduleDto(
 
         String recurring,                        // 반복 주기 (매일/매주 월요일/매월 등, 빈값이면 단건)
 
-        String schMemo                           // 메모 (특이사항, 내일 예정 등)
+        String schMemo,                          // 메모 (특이사항, 내일 예정 등)
+
+        String emailNotiYn                       // 이메일 알림 수신 여부 (Y/N)
 ) {
     // logId 만 교체한 새 인스턴스 반환 (record는 immutable — wither 패턴)
     public ScheduleDto withLogId(String newLogId) {
-        return new ScheduleDto(schId, schTitle, startDt, endDt, priority, status, newLogId, recurring, schMemo);
+        return new ScheduleDto(schId, schTitle, startDt, endDt, priority, status, newLogId, recurring, schMemo, emailNotiYn);
     }
 
     // Thymeleaf 폼 초기 바인딩용 빈 인스턴스
     public static ScheduleDto empty() {
-        return new ScheduleDto(null, null, null, null, null, null, null, null, null);
+        return new ScheduleDto(null, null, null, null, null, null, null, null, null, "N");
     }
 }
