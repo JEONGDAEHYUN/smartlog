@@ -13,8 +13,15 @@ public record UserInfoDto(
         String userName,
         String orgName,
         String userRole,
+        Integer failCount,
+        LocalDateTime lockedUntil,
         LocalDateTime regDt
 ) {
+    // 계정 잠금 여부 — 관리자 화면에서 상태 표시용
+    public boolean isLocked() {
+        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+    }
+
     // Entity → DTO 변환 (정적 팩토리 메서드, Builder 패턴 일관 적용)
     public static UserInfoDto from(UserInfo entity) {
         if (entity == null) return null;
@@ -24,6 +31,8 @@ public record UserInfoDto(
                 .userName(entity.getUserName())
                 .orgName(entity.getOrgName())
                 .userRole(entity.getUserRole())
+                .failCount(entity.getFailCount())
+                .lockedUntil(entity.getLockedUntil())
                 .regDt(entity.getRegDt())
                 .build();
     }

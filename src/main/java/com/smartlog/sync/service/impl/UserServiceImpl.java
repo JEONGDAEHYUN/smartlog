@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 // 회원 관련 비즈니스 로직 구현체
 // 역할: Controller 와 Repository(DB) 사이에서 회원가입·계정찾기·프로필/비번 수정·로그인 실패잠금 같은
@@ -156,6 +157,37 @@ public class UserServiceImpl implements UserService {
         if (user == null) return;
         user.resetLoginFailures();     // failCount=0, lockedUntil=null (도메인 메서드)
         userInfoRepository.save(user); // 초기화 결과 저장(UPDATE)
+    }
+
+    // ── [관리자] 전체 회원 목록 조회 ──
+    @Override
+    public List<UserInfoDto> findAllUsers() {
+        return userInfoRepository.findAll().stream()
+                .map(UserInfoDto::from)
+                .toList();
+    }
+
+    // ── [관리자] 계정 잠금/해제 토글 ──
+    @Override
+    public void adminToggleLock(Long targetUserId) {
+        UserInfo user = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
+            user.resetLoginFailures(); // 잠금 해제
+        } else {
+            user.lockByAdmin(); // 365일 잠금
+        }
+        userInfoRepository.save(user);
+    }
+
+    // ── [관리자] 권한 전환 (ROLE_USER ↔ ROLE_ADMIN) ──
+    @Override
+    public void adminToggleRole(Long targetUserId) {
+        UserInfo user = userInfoRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
+        String newRole = "ROLE_ADMIN".equals(user.getUserRole()) ? "ROLE_USER" : "ROLE_ADMIN";
+        user.changeRole(newRole);
+        userInfoRepository.save(user);
     }
 
     // ── 이메일 마스킹 ── (아이디 찾기에서 사용)

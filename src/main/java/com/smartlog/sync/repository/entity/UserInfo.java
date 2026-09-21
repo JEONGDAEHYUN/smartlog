@@ -134,6 +134,16 @@ public class UserInfo {
         this.lockedUntil = LocalDateTime.now().plusMinutes(minutes);
     }
 
+    // 비즈니스 메서드 : 관리자 권한 변경 (ROLE_USER ↔ ROLE_ADMIN)
+    public void changeRole(String role) {
+        this.userRole = role;
+    }
+
+    // 비즈니스 메서드 : 관리자에 의한 계정 장기 잠금 (365일)
+    public void lockByAdmin() {
+        this.lockedUntil = LocalDateTime.now().plusDays(365);
+    }
+
     // 비즈니스 메서드 : 로그인 성공 또는 잠금 해제 시 — 실패 카운트/잠금 해제
     public void resetLoginFailures() {
         // 실패 휫수 리셋

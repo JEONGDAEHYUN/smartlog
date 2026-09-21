@@ -4,6 +4,8 @@ import com.smartlog.sync.dto.SignupDto;
 import com.smartlog.sync.dto.UserInfoDto;
 import com.smartlog.sync.repository.entity.UserInfo;
 
+import java.util.List;
+
 // 회원 관련 비즈니스 로직 인터페이스
 public interface UserService {
 
@@ -16,7 +18,7 @@ public interface UserService {
     // 아이디(이메일) 찾기 — 이름 + 조직명으로 조회, 마스킹 처리
     String findEmail(String userName, String orgName);
 
-    // 비밀번호 재설정
+    // 비밀번호 재설정'
     void resetPassword(String userEmail, String newPassword);
 
     // 개인정보 수정 (이메일, 이름, 조직명) — 이메일 변경 시 true 반환(재로그인 유도용)
@@ -36,4 +38,13 @@ public interface UserService {
 
     // 로그인 실패 횟수 초기화 — 로그인 성공 시 호출
     void resetLoginFailures(String userEmail);
+
+    // [관리자] 전체 회원 목록 조회
+    List<UserInfoDto> findAllUsers();
+
+    // [관리자] 계정 잠금/해제 토글 — 현재 잠금이면 해제, 아니면 365일 잠금
+    void adminToggleLock(Long targetUserId);
+
+    // [관리자] 권한 전환 — ROLE_USER ↔ ROLE_ADMIN
+    void adminToggleRole(Long targetUserId);
 }
