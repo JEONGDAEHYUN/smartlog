@@ -51,6 +51,11 @@ public class SchInfo {
     @Column(name = "EMAIL_NOTI_YN", length = 1, nullable = false, columnDefinition = "VARCHAR(1) NOT NULL DEFAULT 'N'")
     private String emailNotiYn = "N";
 
+    @Builder.Default
+    // 별표(즐겨찾기) 여부 — Y: 별표 표시, N: 기본
+    @Column(name = "IS_STARRED", length = 1, nullable = false, columnDefinition = "VARCHAR(1) NOT NULL DEFAULT 'N'")
+    private String isStarred = "N";
+
     @Column(name = "REG_DT", nullable = false, updatable = false)
     private LocalDateTime regDt; // 등록일
 
@@ -71,6 +76,11 @@ public class SchInfo {
         this.recurring = recurring;
         this.schMemo = schMemo;
         this.emailNotiYn = "Y".equals(emailNotiYn) ? "Y" : "N";
+    }
+
+    // 비즈니스 메서드 : 별표 ON/OFF 토글
+    public void toggleStar() {
+        this.isStarred = "Y".equals(this.isStarred) ? "N" : "Y";
     }
 
     // 반복 업무 자정 초기화 — 상태만 PLANNED 로 되돌림

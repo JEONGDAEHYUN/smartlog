@@ -63,6 +63,15 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
+    public String toggleStar(Long schId) {
+        SchInfo sch = schInfoRepository.findById(schId)
+                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다"));
+        sch.toggleStar();
+        schInfoRepository.save(sch);
+        return sch.getIsStarred();
+    }
+
+    @Override
     @Transactional
     public void delete(Long schId) {
         notiInfoRepository.deleteBySchInfoSchId(schId);

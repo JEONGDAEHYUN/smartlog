@@ -48,4 +48,7 @@ public interface ScheduleService {
 
     // 사용자의 모든 반복 일정 완료 기록 일괄 조회 (apiEvents 에서 N+1 회피용)
     List<SchCompletion> findCompletionsByUserId(Long userId);
+
+    // 별표 ON/OFF 토글 — 토글 후 상태 반환 (Y/N)
+    String toggleStar(Long schId);
 }

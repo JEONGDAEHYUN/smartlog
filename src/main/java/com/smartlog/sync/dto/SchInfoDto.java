@@ -19,6 +19,7 @@ public record SchInfoDto(
         String recurring,
         String schMemo,
         String emailNotiYn,
+        String isStarred,
         LocalDateTime regDt
 ) {
     // Entity → DTO 변환 (Builder 패턴 일관 적용)
@@ -35,6 +36,7 @@ public record SchInfoDto(
                 .recurring(entity.getRecurring())
                 .schMemo(entity.getSchMemo())
                 .emailNotiYn(entity.getEmailNotiYn() != null ? entity.getEmailNotiYn() : "N")
+                .isStarred(entity.getIsStarred() != null ? entity.getIsStarred() : "N")
                 .regDt(entity.getRegDt())
                 .build();
     }

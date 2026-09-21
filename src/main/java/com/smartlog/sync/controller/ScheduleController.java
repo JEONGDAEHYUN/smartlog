@@ -29,6 +29,7 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
     private final UserService userService;
     private final com.smartlog.sync.service.WorklogService worklogService;
+    private final com.smartlog.sync.service.HolidayService holidayService;
 
     // 일정 목록 (주간/월간 통합)
     @GetMapping("/list")
@@ -268,6 +269,7 @@ public class ScheduleController {
         map.put("priority", sch.priority());
         map.put("status", status);
         map.put("recurring", sch.recurring());
+        map.put("starred", "Y".equals(sch.isStarred()));
         return map;
     }
 
@@ -311,6 +313,21 @@ public class ScheduleController {
                 .map(java.util.Map.Entry::getValue)
                 .findFirst()
                 .orElse(null);
+    }
+
+    // 공휴일 조회 API — 월간 캘린더에서 Fetch로 호출
+    @GetMapping("/api/holidays")
+    @ResponseBody
+    public Map<Integer, String> holidays(@RequestParam int year, @RequestParam int month) {
+        return holidayService.getHolidays(year, month);
+    }
+
+    // 별표 토글 API — fetch로 호출, CSRF 예외(/schedule/api/**)
+    @PostMapping("/api/{schId}/star")
+    @ResponseBody
+    public Map<String, Object> toggleStar(@PathVariable Long schId) {
+        String result = scheduleService.toggleStar(schId);
+        return Map.of("starred", "Y".equals(result));
     }
 
     // 충돌 검사 API — 등록/수정 전 모달 경고용

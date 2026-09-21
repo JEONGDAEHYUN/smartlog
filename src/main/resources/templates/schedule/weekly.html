@@ -231,7 +231,7 @@ function renderWeek() {
             const maxShow = 2;
             cellEvents.slice(0, maxShow).forEach(ev => {
                 const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
-                cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</div>';
+                cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + (ev.starred ? '<span style="color:#f5a623;font-weight:bold;">★</span> ' : '') + ev.title + '</div>';
             });
             if (cellEvents.length > maxShow) {
                 cellHtml += '<div style="font-size:10px;color:#2d6ca8;font-weight:600;padding:1px 5px;cursor:pointer;">+' + (cellEvents.length - maxShow) + '개</div>';
@@ -276,7 +276,7 @@ function renderDay() {
         let cellHtml = '<div class="week-cell">';
         cellEvents.forEach(ev => {
             const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
-            cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</div>';
+            cellHtml += '<div class="week-event ' + cls + '" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + (ev.starred ? '<span style="color:#f5a623;font-weight:bold;">★</span> ' : '') + ev.title + '</div>';
         });
         cellHtml += '</div>';
         grid.innerHTML += cellHtml;
@@ -339,7 +339,7 @@ function renderWeekTable() {
         actionHtml += '<button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:10px;" onclick="deleteOneSchedule(' + ev.id + ', ' + (ev.recurring ? 'true' : 'false') + ')">삭제</button>';
         return '<tr>' +
             '<td><input type="checkbox" class="week-check" value="' + ev.id + '" data-recurring="' + (ev.recurring ? 'true' : 'false') + '"></td>' +
-            '<td class="' + titleCls + '" style="cursor:pointer;color:var(--n6);" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + ev.title + '</td>' +
+            '<td class="' + titleCls + '" style="cursor:pointer;color:var(--n6);" onclick="window.location.href=\'/schedule/edit/' + ev.id + '?from=weekly\'">' + (ev.starred ? '<span style="color:#f5a623;">★</span> ' : '') + ev.title + '</td>' +
             '<td class="text-muted">' + (ev.start ? ev.start.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
             '<td class="text-muted">' + (ev.end ? ev.end.substring(5, 16).replace('T', ' ') : '-') + '</td>' +
             '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>' +

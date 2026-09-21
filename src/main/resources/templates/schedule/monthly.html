@@ -92,14 +92,33 @@
 <script>
 let currentYear, currentMonth;
 let events = [];
+let holidays = {}; // {일: 공휴일명}
 
 // 초기화
 (function init() {
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
-    fetchEvents();
+    fetchAll();
 })();
+
+// 일정 + 공휴일 동시 로드
+function fetchAll() {
+    const eventsReq = fetch('/schedule/api/events').then(r => r.json()).catch(() => []);
+    const holidaysReq = fetchHolidays(currentYear, currentMonth + 1);
+    Promise.all([eventsReq, holidaysReq]).then(([evData, holData]) => {
+        events = evData;
+        holidays = holData;
+        renderCalendar();
+    });
+}
+
+// 공휴일 API 호출
+function fetchHolidays(year, month) {
+    return fetch('/schedule/api/holidays?year=' + year + '&month=' + month)
+        .then(r => r.json())
+        .catch(() => ({}));
+}
 
 // 일정 데이터 로드
 function fetchEvents() {
@@ -113,7 +132,8 @@ function changeMonth(delta) {
     currentMonth += delta;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCalendar();
+    // 월 변경 시 공휴일도 새로 로드
+    fetchHolidays(currentYear, currentMonth + 1).then(h => { holidays = h; renderCalendar(); });
 }
 
 function goToday() {
@@ -152,7 +172,7 @@ function renderCalendar() {
     // 현재 달
     for (let d = 1; d <= lastDate; d++) {
         const isToday = (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate());
-        const cell = createCell(d, false, isToday);
+        const cell = createCell(d, false, isToday, holidays[d]);
         // 해당 날짜 이벤트 추가
         const dateStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
         const dayEvents = events.filter(e => e.start && e.start.startsWith(dateStr));
@@ -161,7 +181,7 @@ function renderCalendar() {
             const badge = document.createElement('div');
             const cls = ev.status === 'DONE' ? 'DONE' : ev.priority;
             badge.className = 'cal-event ' + cls;
-            badge.textContent = ev.title;
+            badge.innerHTML = (ev.starred ? '<span style="color:#f5a623;font-weight:bold;">★</span> ' : '') + ev.title;
             badge.onclick = function(e) { e.stopPropagation(); window.location.href = '/schedule/edit/' + ev.id + '?from=monthly'; };
             cell.appendChild(badge);
         });
@@ -183,12 +203,24 @@ function renderCalendar() {
     }
 }
 
-function createCell(day, isOther, isToday) {
+function createCell(day, isOther, isToday, holidayName) {
     const cell = document.createElement('div');
     cell.className = 'cal-cell' + (isOther ? ' other' : '') + (isToday ? ' today selected' : '');
+
     const dayDiv = document.createElement('div');
     dayDiv.className = 'cal-day';
-    dayDiv.textContent = day;
+    // 공휴일이면 날짜 숫자를 빨간색으로 표시
+    if (holidayName && !isOther) {
+        dayDiv.style.color = '#c0392b';
+        dayDiv.textContent = day;
+        // 공휴일 이름 배지
+        const badge = document.createElement('div');
+        badge.style.cssText = 'font-size:9px; color:#c0392b; font-weight:600; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+        badge.textContent = holidayName;
+        dayDiv.appendChild(badge);
+    } else {
+        dayDiv.textContent = day;
+    }
     cell.appendChild(dayDiv);
     return cell;
 }
@@ -214,7 +246,7 @@ function showDayDetail(dateStr, dayEvents) {
             const prCls = ev.priority === 'HIGH' ? 'bg-danger-subtle text-danger' : (ev.priority === 'MID' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success');
             const stCls = ev.status === 'DONE' ? 'bg-secondary-subtle text-secondary' : (ev.status === 'IN_PROGRESS' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info');
             html += '<tr><td><input type="checkbox" class="day-check" value="' + ev.id + '" data-recurring="' + (ev.recurring ? 'true' : 'false') + '"></td>';
-            html += '<td class="fw-semibold">' + ev.title + '</td>';
+            html += '<td class="fw-semibold">' + (ev.starred ? '<span style="color:#f5a623;">★</span> ' : '') + ev.title + '</td>';
             html += '<td class="text-muted">' + (ev.start ? ev.start.substring(11, 16) : '-') + '</td>';
             html += '<td><span class="badge ' + prCls + '">' + ev.priority + '</span></td>';
             html += '<td><span class="badge ' + stCls + '">' + ev.status + '</span></td>';
