@@ -3,6 +3,12 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
 
+  # 파일 업로드 크기 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   # 애플리케이션 이름
   application:
     name: sync
@@ -57,6 +63,14 @@ gemini:
 # 날씨 API 설정 (기상청 단기예보 - 공공데이터포털)
 weather:
   api-key: ${WEATHER_API_KEY:}
+
+# 공휴일 API 설정 (한국천문연구원 특일 정보 - 공공데이터포털)
+holiday:
+  api-key: ${HOLIDAY_API_KEY:}
+
+# 첨부파일 저장 경로 (로컬: 홈 디렉터리, EC2: 환경변수 FILE_UPLOAD_DIR 로 override)
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:${user.home}/smartlog-uploads}
 
 # 서버 포트 + 세션 쿠키 보안 설정
 server:

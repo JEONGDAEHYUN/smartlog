@@ -91,8 +91,6 @@ public class WorklogController {
         List<WorklogDto> worklogs = worklogService.getByUserId(user.getUserId());
         model.addAttribute("worklogs", worklogs);
 
-        // 각 업무일지의 LOG_ID 로 SCH_INFO 조회 → 연결된 schId 만 Map 에 담음
-        // archive.html 에서 ${linkedSchIdMap[log.logId]} 로 연결 여부 + 일정 보기 링크 분기 처리
         Map<String, Long> linkedSchIdMap = new HashMap<>();
         for (WorklogDto w : worklogs) {
             if (w.logId() == null) continue;
@@ -110,13 +108,11 @@ public class WorklogController {
         WorklogDto worklog = worklogService.getByLogId(logId);
         model.addAttribute("worklog", worklog);
 
-        // 기본 일정 제목: "M월 d일(요일) 업무일지"
         java.time.LocalDate today = java.time.LocalDate.now();
         String[] dayNames = {"월", "화", "수", "목", "금", "토", "일"};
         String dayOfWeek = dayNames[today.getDayOfWeek().getValue() - 1];
         String defaultTitle = today.getMonthValue() + "월 " + today.getDayOfMonth() + "일(" + dayOfWeek + ") 업무일지";
 
-        // 빌더 패턴으로 일관된 객체 생성
         ScheduleDto dto = ScheduleDto.builder()
                 .logId(logId)
                 .schTitle(defaultTitle)
@@ -130,7 +126,6 @@ public class WorklogController {
     }
 
     // 일정 확정 처리 (SCH_INFO INSERT + LOG_ID 연결)
-    // 확정 후 → 업무 아카이브로 이동 (업무일지 도메인 안에서 흐름 완결)
     @PostMapping("/confirm/{logId}")
     public String confirm(@PathVariable String logId,
                           @AuthenticationPrincipal UserDetails userDetails,
@@ -138,7 +133,6 @@ public class WorklogController {
         UserInfo user = userService.getEntityByEmail(userDetails.getUsername());
         if (user == null) return "redirect:/login";
 
-        // record 는 immutable — logId 만 교체한 새 인스턴스 생성
         scheduleService.create(user, scheduleDto.withLogId(logId));
         return "redirect:/worklog/archive";
     }

@@ -1,20 +1,29 @@
 package com.smartlog.sync.controller;
 
+import com.smartlog.sync.dto.FileInfoDto;
 import com.smartlog.sync.dto.ReportInfoDto;
 import com.smartlog.sync.dto.ScheduleStatsDto;
 import com.smartlog.sync.repository.entity.UserInfo;
+import com.smartlog.sync.service.FileService;
 import com.smartlog.sync.service.ReportService;
 import com.smartlog.sync.service.ScheduleService;
 import com.smartlog.sync.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -30,6 +39,7 @@ public class ReportController {
     private final ReportService reportService;
     private final ScheduleService scheduleService;
     private final UserService userService;
+    private final FileService fileService;
 
     // 보고서 생성 페이지
     @GetMapping("/create")
@@ -93,13 +103,13 @@ public class ReportController {
         return "redirect:/report/create";
     }
 
-    // 보고서 상세 (통계 포함)
+    // 보고서 상세 (통계 + 첨부파일 목록 포함)
     @GetMapping("/detail/{repId}")
     public String detail(@PathVariable Long repId, @AuthenticationPrincipal UserDetails userDetails, Model model) {
         ReportInfoDto report = reportService.getById(repId);
         model.addAttribute("report", report);
+        model.addAttribute("files", fileService.getByRepId(repId));
 
-        // 통계 데이터 (ScheduleService에서 일원화된 통계 계산)
         UserInfo user = getUser(userDetails);
         if (user != null) {
             ScheduleStatsDto stats = scheduleService.getStatsByUserId(user.getUserId());
@@ -113,6 +123,65 @@ public class ReportController {
             model.addAttribute("doneRate", stats.doneRate());
         }
         return "report/detail";
+    }
+
+    // ─── 첨부파일 ──────────────────────────────────────────────
+
+    // 파일 업로드
+    @PostMapping("/detail/{repId}/upload")
+    public String uploadFile(@AuthenticationPrincipal UserDetails userDetails,
+                             @PathVariable Long repId,
+                             @RequestParam("file") MultipartFile file,
+                             RedirectAttributes redirectAttributes) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return "redirect:/login";
+        try {
+            fileService.upload(repId, user.getUserId(), file);
+            redirectAttributes.addFlashAttribute("fileMsg", "파일이 업로드되었습니다.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("fileError", e.getMessage());
+        }
+        return "redirect:/report/detail/" + repId;
+    }
+
+    // 파일 다운로드 (이미지 → 인라인 미리보기, PDF → 다운로드)
+    @GetMapping("/file/{fileId}/download")
+    @ResponseBody
+    public ResponseEntity<Resource> downloadFile(@AuthenticationPrincipal UserDetails userDetails,
+                                                 @PathVariable Long fileId) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return ResponseEntity.status(401).build();
+        try {
+            FileInfoDto fileDto = fileService.getById(fileId);
+            Resource resource = fileService.loadAsResource(fileId, user.getUserId());
+            String disposition = fileDto.isImage() ? "inline" : "attachment";
+            String encodedName = URLEncoder.encode(fileDto.originalName(), StandardCharsets.UTF_8)
+                    .replace("+", "%20");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(fileDto.contentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            disposition + "; filename*=UTF-8''" + encodedName)
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // 파일 삭제
+    @PostMapping("/file/{fileId}/delete")
+    public String deleteFile(@AuthenticationPrincipal UserDetails userDetails,
+                             @PathVariable Long fileId,
+                             @RequestParam Long repId,
+                             RedirectAttributes redirectAttributes) {
+        UserInfo user = getUser(userDetails);
+        if (user == null) return "redirect:/login";
+        try {
+            fileService.delete(fileId, user.getUserId());
+            redirectAttributes.addFlashAttribute("fileMsg", "파일이 삭제되었습니다.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("fileError", "파일 삭제 실패: " + e.getMessage());
+        }
+        return "redirect:/report/detail/" + repId;
     }
 
     // 문서 보관함 (목록)
