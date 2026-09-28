@@ -28,8 +28,13 @@ public class HolidayServiceImpl implements HolidayService {
     @Value("${holiday.api-key:}")
     private String apiKey;
 
-    // 연·월 단위 인메모리 캐시 (당해 연도 데이터는 자주 바뀌지 않음)
-    private final Map<String, Map<Integer, String>> cache = new ConcurrentHashMap<>();
+    // 연·월 단위 인메모리 캐시 — 최대 24개월분만 유지 (오래된 항목 자동 제거)
+    private final Map<String, Map<Integer, String>> cache = new java.util.LinkedHashMap<>() {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Map<Integer, String>> eldest) {
+            return size() > 24;
+        }
+    };
 
     private static final String BASE_URL =
             "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo";
@@ -37,11 +42,12 @@ public class HolidayServiceImpl implements HolidayService {
     @Override
     public Map<Integer, String> getHolidays(int year, int month) {
         if (apiKey == null || apiKey.isBlank()) {
-            return Map.of(); // API 키 미설정 시 빈 맵 반환
+            return Map.of();
         }
 
         String cacheKey = year + "-" + String.format("%02d", month);
         if (cache.containsKey(cacheKey)) {
+            log.debug("[공휴일 API] 캐시 히트 {}", cacheKey);
             return cache.get(cacheKey);
         }
 
@@ -58,11 +64,11 @@ public class HolidayServiceImpl implements HolidayService {
             String body = restClient.get().uri(uri).retrieve().body(String.class);
             Map<Integer, String> holidays = parse(body);
             cache.put(cacheKey, holidays);
-            log.info("[공휴일 API] {}-{} 조회 완료 {}건", year, month, holidays.size());
+            log.info("[공휴일 API] {}-{} API 호출 완료 {}건", year, month, holidays.size());
             return holidays;
 
         } catch (Exception e) {
-            log.warn("[공휴일 API] 호출 실패: {}", e.getMessage());
+            log.warn("[공휴일 API] 호출 실패 {}-{}: {}", year, month, e.getMessage());
             return Map.of();
         }
     }
