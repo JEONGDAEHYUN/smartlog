@@ -46,7 +46,13 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
         //  - 잠긴 동안엔 실패 카운트를 더 올리는 게 의미 없으므로 증가시키지 않고 잠금 안내 페이지로만 보냄
         //  - return 으로 메서드 즉시 종료 (아래 로직 실행 안 함)
         if (exception instanceof LockedException) {
-            getRedirectStrategy().sendRedirect(request, response, "/login?locked=true");
+            // 관리자 잠금(failCount < 5)과 5회 실패 잠금을 구분하여 다른 안내 표시
+            UserInfo lockedUser = (email != null && !email.isBlank())
+                    ? userService.getEntityByEmail(email) : null;
+            boolean adminLocked = lockedUser != null
+                    && (lockedUser.getFailCount() == null || lockedUser.getFailCount() < 5);
+            String redirectUrl = adminLocked ? "/login?adminLocked=true" : "/login?locked=true";
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
             return;
         }
 

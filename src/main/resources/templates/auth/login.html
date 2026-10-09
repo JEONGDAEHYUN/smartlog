@@ -65,13 +65,18 @@
                     <h4 class="fw-bold mb-1">로그인</h4>
                     <p class="text-muted small mb-4">이메일과 비밀번호를 입력해주세요</p>
 
-                    <!-- 계정 잠금 메시지 -->
+                    <!-- 5회 실패 잠금 메시지 -->
                     <div th:if="${param.locked}" class="alert alert-danger small py-2">
                         <strong>5회 실패 — 계정이 잠금되었습니다.</strong><br>
                         비밀번호를 초기화하세요.
                         <div class="mt-1" style="height:4px; background:#fde0e0; border-radius:2px; overflow:hidden;">
                             <div style="width:100%; height:100%; background:#c0392b; border-radius:2px;"></div>
                         </div>
+                    </div>
+                    <!-- 관리자 잠금 메시지 -->
+                    <div th:if="${param.adminLocked}" class="alert alert-danger small py-2">
+                        <strong>관리자에 의해 계정이 잠금되었습니다.</strong><br>
+                        관리자에게 문의하세요.
                     </div>
                     <!-- 에러 메시지 (로그인 실패) -->
                     <div th:if="${param.error}" class="alert alert-danger small py-2">
