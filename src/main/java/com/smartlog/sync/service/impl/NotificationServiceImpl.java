@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 // 알림 서비스 구현체 — 일정 마감 알림 자동 생성/발송 + 스케줄러
@@ -45,7 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
         if ("DONE".equals(sch.getStatus())) return;
 
         LocalDateTime baseDt = sch.getEndDt() != null ? sch.getEndDt() : sch.getStartDt();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
         LocalDateTime notiDt = null;
         String msg = null;
@@ -84,7 +85,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional  // LAZY 연관(schInfo, userInfo) 접근을 위해 트랜잭션 유지
     public void checkAndSendNotifications() {
         List<NotiInfo> pendingList = notiInfoRepository.findByIsSent("N");
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
         for (NotiInfo noti : pendingList) {
             if (noti.getNotiDt().isBefore(now) || noti.getNotiDt().isEqual(now)) {
@@ -109,7 +110,7 @@ public class NotificationServiceImpl implements NotificationService {
     private void createNextNotification(NotiInfo sent) {
         SchInfo sch = sent.getSchInfo();
         LocalDateTime baseDt = sch.getEndDt() != null ? sch.getEndDt() : sch.getStartDt();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         String title = sch.getSchTitle();
         String currentMsg = sent.getNotiMsg();
 
