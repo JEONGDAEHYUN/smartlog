@@ -6,8 +6,8 @@ spring:
   # 파일 업로드 크기 제한
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 50MB       # 파일 1개 최대 크기
+      max-request-size: 50MB    # 요청 전체 최대 크기 (Nginx client_max_body_size 55M 보다 작게)
 
   # 애플리케이션 이름
   application:
